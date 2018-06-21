@@ -22,12 +22,6 @@ env:
     # OpenSSL ignores LDFLAGS when linking bin/openssl
     - LD_RUN_PATH="${OPENSSL_DIR}/lib"
 
-branches:
-  only:
-    - master
-    - /^\d\.\d$/
-    - buildbot-custom
-
 matrix:
   fast_finish: true
   allow_failures:
