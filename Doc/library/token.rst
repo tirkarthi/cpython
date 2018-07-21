@@ -97,6 +97,7 @@ The token constants are:
           ATEQUAL
           RARROW
           ELLIPSIS
+          COLONEQUAL
           OP
           ERRORTOKEN
           N_TOKENS
