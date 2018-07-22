@@ -85,6 +85,7 @@ EXACT_TOKEN_TYPES = {
     '//':  DOUBLESLASH,
     '//=': DOUBLESLASHEQUAL,
     '...': ELLIPSIS,
+    ':=': COLONEQUAL,
     '->':  RARROW,
     '@':   AT,
     '@=':  ATEQUAL,
@@ -168,7 +169,7 @@ String = group(StringPrefix + r"'[^\n'\\]*(?:\\.[^\n'\\]*)*'",
 # recognized as two instances of =).
 Operator = group(r"\*\*=?", r">>=?", r"<<=?", r"!=",
                  r"//=?", r"->",
-                 r"[+\-*/%&@|^=<>]=?",
+                 r"[+\-*/%&@|^=<>:]=?",
                  r"~")
 
 Bracket = '[][(){}]'
