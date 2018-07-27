@@ -3514,9 +3514,11 @@ exit_eval_frame:
 static void
 format_missing(const char *kind, PyCodeObject *co, PyObject *names)
 {
-    int err;
+    int err, set;
     Py_ssize_t len = PyList_GET_SIZE(names);
     PyObject *name_str, *comma, *tail, *tmp;
+    PyObject *key, *value,  *type_annotations, *temp, *type_name, *globals, *annotations;
+    Py_ssize_t pos;
 
     assert(PyList_CheckExact(names));
     assert(len >= 1);
@@ -3563,13 +3565,50 @@ format_missing(const char *kind, PyCodeObject *co, PyObject *names)
     }
     if (name_str == NULL)
         return;
-    PyErr_Format(PyExc_TypeError,
-                 "%U() missing %i required %s argument%s: %U",
-                 co->co_name,
-                 len,
-                 kind,
-                 len == 1 ? "" : "s",
-                 name_str);
+
+    set = 0;
+    pos = 0;
+    globals = PyEval_GetGlobals();
+    annotations = PyFunction_GetAnnotations(PyDict_GetItem(globals, co->co_name));
+
+    //  Annotations are present then we can form a annotation string
+    if (annotations != NULL) {
+        while (PyDict_Next(annotations, &pos, &key, &value)) {
+            // Take the string representation of the type. int -> <class 'int'>
+            // Dict[str, int] -> typing.Dict[str, int]
+            type_name = PyObject_Str(value);
+            if (set == 0) {
+              // Initialize the first type annotation string. Sort of a hack.
+              type_annotations = PyUnicode_Concat(PyUnicode_FromFormat("%U: ", key), type_name);
+              set += 1;
+            } else {
+              // Make a temporary string for current item and then append to existing string
+              temp = PyUnicode_Concat(PyUnicode_FromFormat(", %U: ", key), type_name);
+              type_annotations = PyUnicode_Concat(type_annotations, temp);
+            }
+        }
+    }
+
+    if (set == 0) {
+      PyErr_Format(PyExc_TypeError,
+                   "%U() missing %i required %s argument%s: %U",
+                   co->co_name,
+                   len,
+                   kind,
+                   len == 1 ? "" : "s",
+                   name_str);
+    } else {
+      PyErr_Format(PyExc_TypeError,
+                   "%U() missing %i required %s argument%s: %U \nannotation: (%U)",
+                   co->co_name,
+                   len,
+                   kind,
+                   len == 1 ? "" : "s",
+                   name_str,
+                   type_annotations);
+      Py_DECREF(type_annotations);
+    }
+
     Py_DECREF(name_str);
 }
 
