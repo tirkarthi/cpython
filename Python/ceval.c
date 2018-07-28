@@ -3512,7 +3512,7 @@ exit_eval_frame:
 }
 
 static void
-format_missing(const char *kind, PyCodeObject *co, PyObject *names)
+format_missing(const char *kind, PyCodeObject *co, PyObject *names, PyObject *func)
 {
     int err, set;
     Py_ssize_t len = PyList_GET_SIZE(names);
@@ -3570,31 +3570,35 @@ format_missing(const char *kind, PyCodeObject *co, PyObject *names)
     set = 0;
     pos = 0;
     globals = PyEval_GetGlobals();
-    func_object = PyDict_GetItem(globals, co->co_name);
+    // Try to get annotations from the func object if present
+    // or get the func object as per co->co_name
+    if (func != NULL) {
+        annotations = PyFunction_GetAnnotations(func);
+    } else {
+        func_object = PyDict_GetItem(globals, co->co_name);
+        if (func_object != NULL) {
+            annotations = PyFunction_GetAnnotations(PyDict_GetItem(globals, co->co_name));
+        }
+    }
 
-    // Func object is null for methods in a class since co->co_name gives function name
-    // which is not present in globals
-    // TODO: Handle this like get_type_hints
+    // TODO: Handle cases in get_type_hints
     // TODO: Honor __no_type_check__ ?
     // TOOD: Handle forward references
-    if (func_object != NULL) {
-        annotations = PyFunction_GetAnnotations(PyDict_GetItem(globals, co->co_name));
 
-        // Annotations are present then we can form a annotation string
-        if (annotations != NULL) {
-            while (PyDict_Next(annotations, &pos, &key, &value)) {
-                // Take the string representation of the type. int -> <class 'int'>
-                // Dict[str, int] -> typing.Dict[str, int]
-                type_name = PyObject_Str(value);
-                if (set == 0) {
-                    // Initialize the first type annotation string. Sort of a hack.
-                    function_annotations = PyUnicode_Concat(PyUnicode_FromFormat("%U: ", key), type_name);
-                    set += 1;
-                } else {
-                    // Make a temporary string for current item and then append to existing string
-                    temp = PyUnicode_Concat(PyUnicode_FromFormat(", %U: ", key), type_name);
-                    function_annotations = PyUnicode_Concat(function_annotations, temp);
-                }
+    // Annotations are present then we can form a annotation stringa
+    if (annotations != NULL) {
+        while (PyDict_Next(annotations, &pos, &key, &value)) {
+            // Take the string representation of the type. int -> <class 'int'>
+            // Dict[str, int] -> typing.Dict[str, int]
+            type_name = PyObject_Str(value);
+            if (set == 0) {
+                // Testing function_annotations to be NULL is not reliable so use this for initialization
+                function_annotations = PyUnicode_Concat(PyUnicode_FromFormat("%U: ", key), type_name);
+                set += 1;
+            } else {
+                // Make a temporary string for current item and then append to existing string
+                temp = PyUnicode_Concat(PyUnicode_FromFormat(", %U: ", key), type_name);
+                function_annotations = PyUnicode_Concat(function_annotations, temp);
             }
         }
     }
@@ -3609,7 +3613,7 @@ format_missing(const char *kind, PyCodeObject *co, PyObject *names)
                      name_str);
     } else {
         PyErr_Format(PyExc_TypeError,
-		     "%U() missing %i required %s argument%s: %U \nAnnotation: (%U)",
+                     "%U() missing %i required %s argument%s: %U \nAnnotation: (%U)",
                      co->co_name,
                      len,
                      kind,
@@ -3624,7 +3628,7 @@ format_missing(const char *kind, PyCodeObject *co, PyObject *names)
 
 static void
 missing_arguments(PyCodeObject *co, Py_ssize_t missing, Py_ssize_t defcount,
-                  PyObject **fastlocals)
+                  PyObject **fastlocals, PyObject *func)
 {
     Py_ssize_t i, j = 0;
     Py_ssize_t start, end;
@@ -3656,7 +3660,7 @@ missing_arguments(PyCodeObject *co, Py_ssize_t missing, Py_ssize_t defcount,
         }
     }
     assert(j == missing);
-    format_missing(kind, co, missing_names);
+    format_missing(kind, co, missing_names, func);
     Py_DECREF(missing_names);
 }
 
@@ -3727,7 +3731,7 @@ _PyEval_EvalCodeWithName(PyObject *_co, PyObject *globals, PyObject *locals,
            Py_ssize_t kwcount, int kwstep,
            PyObject *const *defs, Py_ssize_t defcount,
            PyObject *kwdefs, PyObject *closure,
-           PyObject *name, PyObject *qualname)
+           PyObject *name, PyObject *qualname, PyObject *func)
 {
     PyCodeObject* co = (PyCodeObject*)_co;
     PyFrameObject *f;
@@ -3874,7 +3878,7 @@ _PyEval_EvalCodeWithName(PyObject *_co, PyObject *globals, PyObject *locals,
             }
         }
         if (missing) {
-            missing_arguments(co, missing, defcount, fastlocals);
+            missing_arguments(co, missing, defcount, fastlocals, func);
             goto fail;
         }
         if (n > m)
@@ -3909,7 +3913,7 @@ _PyEval_EvalCodeWithName(PyObject *_co, PyObject *globals, PyObject *locals,
             missing++;
         }
         if (missing) {
-            missing_arguments(co, missing, -1, fastlocals);
+            missing_arguments(co, missing, -1, fastlocals, func);
             goto fail;
         }
     }
@@ -4022,7 +4026,7 @@ PyEval_EvalCodeEx(PyObject *_co, PyObject *globals, PyObject *locals,
                                     kwcount, 2,
                                     defs, defcount,
                                     kwdefs, closure,
-                                    NULL, NULL);
+                                    NULL, NULL, NULL);
 }
 
 static PyObject *

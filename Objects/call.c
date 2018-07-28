@@ -377,7 +377,7 @@ _PyFunction_FastCallDict(PyObject *func, PyObject *const *args, Py_ssize_t nargs
                                       args, nargs,
                                       k, k != NULL ? k + 1 : NULL, nk, 2,
                                       d, nd, kwdefs,
-                                      closure, name, qualname);
+                                      closure, name, qualname, func);
     Py_XDECREF(kwtuple);
     return result;
 }
@@ -436,7 +436,7 @@ _PyFunction_FastCallKeywords(PyObject *func, PyObject *const *stack,
                                     stack + nargs,
                                     nkwargs, 1,
                                     d, (int)nd, kwdefs,
-                                    closure, name, qualname);
+                                    closure, name, qualname, func);
 }
 
 
