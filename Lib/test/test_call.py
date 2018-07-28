@@ -8,6 +8,7 @@ except ImportError:
 import struct
 import collections
 import itertools
+import typing
 
 # The test cases here cover several paths through the function calling
 # code.  They depend on the METH_XXX flag that is used to define a C
@@ -436,6 +437,95 @@ class FastCallTests(unittest.TestCase):
                 args = args + tuple(kwargs.values())
                 result = _testcapi.pyobject_fastcallkeywords(func, args, kwnames)
                 self.check_result(result, expected)
+
+
+class ErrorMessageTest(unittest.TestCase):
+
+    def test_simple(self):
+
+        def foo(a: int) -> int:
+            return a
+
+        msg = r"Annotation: \(a: <class 'int'>, return: <class 'int'>\)"
+        with self.assertRaisesRegex(TypeError, msg):
+            foo()
+
+        def foo(a: typing.List[int]) -> typing.List[int]:
+            return a
+
+        msg = r"Annotation: \(a: typing.List\[int\], return: typing.List\[int\]\)"
+        with self.assertRaisesRegex(TypeError, msg):
+            foo()
+
+        def keyword_arg(a: int, *, c: int) -> int:
+            return c
+
+        msg = r"keyword_arg\(\) missing 1 required positional argument: 'a' \nAnnotation: \(a: <class 'int'>, c: <class 'int'>, return: <class 'int'>\)"
+
+        with self.assertRaisesRegex(TypeError, msg):
+            keyword_arg()
+
+        with self.assertRaisesRegex(TypeError, msg):
+            keyword_arg(c=1)
+
+        msg = r"keyword_arg\(\) missing 1 required keyword-only argument: 'c' \nAnnotation: \(a: <class 'int'>, c: <class 'int'>, return: <class 'int'>\)"
+        with self.assertRaisesRegex(TypeError, msg):
+            keyword_arg(1)
+
+    def test_inner_functions(self):
+
+        def foo():
+            def bar(a: int) -> int:
+                return a
+
+            return bar()
+
+        msg = r"bar\(\) missing 1 required positional argument: 'a' \nAnnotation: \(a: <class 'int'>, return: <class 'int'>\)"
+        with self.assertRaisesRegex(TypeError, msg):
+            foo()
+
+        def foo():
+            def bar(a: typing.List[int]) -> typing.List[int]:
+                return a
+
+            return bar()
+
+        msg = r"bar\(\) missing 1 required positional argument: 'a' \nAnnotation: \(a: typing.List\[int\], return: typing.List\[int\]\)"
+        with self.assertRaisesRegex(TypeError, msg):
+            foo()
+
+    def test_class_methods(self):
+
+        class Foo:
+
+            def foo(self, b: int) -> int:
+                return b
+
+            def bar(self, a: int) -> int:
+                return a
+
+
+        class Bar(Foo):
+
+            def foo(self, c: int) -> int:
+                return c
+
+
+        msg = r"bar\(\) missing 1 required positional argument: 'a' \nAnnotation: \(a: <class 'int'>, return: <class 'int'>\)"
+        with self.assertRaisesRegex(TypeError, msg):
+            Foo().bar()
+
+        msg = r"bar\(\) missing 1 required positional argument: 'a' \nAnnotation: \(a: <class 'int'>, return: <class 'int'>\)"
+        with self.assertRaisesRegex(TypeError, msg):
+            Bar().bar()
+
+        msg = r"foo\(\) missing 1 required positional argument: 'b' \nAnnotation: \(b: <class 'int'>, return: <class 'int'>\)"
+        with self.assertRaisesRegex(TypeError, msg):
+            Foo().foo()
+
+        msg = r"foo\(\) missing 1 required positional argument: 'c' \nAnnotation: \(c: <class 'int'>, return: <class 'int'>\)"
+        with self.assertRaisesRegex(TypeError, msg):
+            Bar().foo()
 
 
 if __name__ == "__main__":
