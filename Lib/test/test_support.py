@@ -456,7 +456,7 @@ class TestSupport(unittest.TestCase):
         # pending child process
         support.reap_children()
 
-    def check_options(self, args, func):
+    def check_options(self, args, expected, func):
         code = f'from test.support import {func}; print(repr({func}()))'
         cmd = [sys.executable, *args, '-c', code]
         env = {key: value for key, value in os.environ.items()
@@ -466,51 +466,52 @@ class TestSupport(unittest.TestCase):
                               stderr=subprocess.DEVNULL,
                               universal_newlines=True,
                               env=env)
-        self.assertEqual(proc.stdout.rstrip(), repr(args))
+        self.assertEqual(proc.stdout.rstrip(), repr(expected))
         self.assertEqual(proc.returncode, 0)
 
     def test_args_from_interpreter_flags(self):
         # Test test.support.args_from_interpreter_flags()
-        for opts in (
+        for opts, expected in (
             # no option
-            [],
+            [[], []],
             # single option
-            ['-B'],
-            ['-s'],
-            ['-S'],
-            ['-E'],
-            ['-v'],
-            ['-b'],
-            ['-q'],
+            [['-B'], ['-B']],
+            [['-s'], ['-s']],
+            [['-S'], ['-S']],
+            [['-E'], ['-E']],
+            [['-v'], ['-v']],
+            [['-b'], ['-b']],
+            [['-q'], ['-q']],
+            [['-I'], ['-s', '-E', '-I']],
             # same option multiple times
-            ['-bb'],
-            ['-vvv'],
+            [['-bb'], ['-bb']],
+            [['-vvv'], ['-vvv']],
             # -W options
-            ['-Wignore'],
+            [['-Wignore'], ['-Wignore']],
             # -X options
-            ['-X', 'dev'],
-            ['-Wignore', '-X', 'dev'],
-            ['-X', 'faulthandler'],
-            ['-X', 'importtime'],
-            ['-X', 'showalloccount'],
-            ['-X', 'showrefcount'],
-            ['-X', 'tracemalloc'],
-            ['-X', 'tracemalloc=3'],
+            [['-X', 'dev'], ['-X', 'dev']],
+            [['-Wignore', '-X', 'dev'], ['-Wignore', '-X', 'dev']],
+            [['-X', 'faulthandler'], ['-X', 'faulthandler']],
+            [['-X', 'importtime'], ['-X', 'importtime']],
+            [['-X', 'showalloccount'], ['-X', 'showalloccount']],
+            [['-X', 'showrefcount'], ['-X', 'showrefcount']],
+            [['-X', 'tracemalloc'], ['-X', 'tracemalloc']],
+            [['-X', 'tracemalloc=3'], ['-X', 'tracemalloc=3']],
         ):
             with self.subTest(opts=opts):
-                self.check_options(opts, 'args_from_interpreter_flags')
+                self.check_options(opts, expected, 'args_from_interpreter_flags')
 
     def test_optim_args_from_interpreter_flags(self):
         # Test test.support.optim_args_from_interpreter_flags()
-        for opts in (
+        for opts, expected in (
             # no option
-            [],
-            ['-O'],
-            ['-OO'],
-            ['-OOOO'],
+            [[], []],
+            [['-O'], ['-O']],
+            [['-OO'], ['-OO']],
+            [['-OOOO'], ['-OOOO']],
         ):
             with self.subTest(opts=opts):
-                self.check_options(opts, 'optim_args_from_interpreter_flags')
+                self.check_options(opts, expected, 'optim_args_from_interpreter_flags')
 
     def test_match_test(self):
         class Test:

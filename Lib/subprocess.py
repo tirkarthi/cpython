@@ -268,6 +268,7 @@ def _args_from_interpreter_flags():
         'verbose': 'v',
         'bytes_warning': 'b',
         'quiet': 'q',
+        'isolated': 'I'
         # -O is handled in _optim_args_from_interpreter_flags()
     }
     args = _optim_args_from_interpreter_flags()
