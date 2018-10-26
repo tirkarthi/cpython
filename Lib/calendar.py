@@ -609,7 +609,7 @@ class LocaleHTMLCalendar(HTMLCalendar):
             s = month_name[themonth]
             if withyear:
                 s = '%s %s' % (s, theyear)
-            return '<tr><th colspan="7" class="month">%s</th></tr>' % s
+            return '<tr><th colspan="7" class="%s">%s</th></tr>' % (self.cssclass_month_head, s)
 
 
 # Support for old module level interface
