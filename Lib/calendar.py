@@ -601,16 +601,11 @@ class LocaleHTMLCalendar(HTMLCalendar):
 
     def formatweekday(self, day):
         with different_locale(self.locale):
-            s = day_abbr[day]
-            return '<th class="%s">%s</th>' % (self.cssclasses[day], s)
+            return super().formatweekday(day)
 
     def formatmonthname(self, theyear, themonth, withyear=True):
         with different_locale(self.locale):
-            s = month_name[themonth]
-            if withyear:
-                s = '%s %s' % (s, theyear)
-            return '<tr><th colspan="7" class="%s">%s</th></tr>' % (self.cssclass_month_head, s)
-
+            return super().formatmonthname(theyear, themonth, withyear)
 
 # Support for old module level interface
 c = TextCalendar()
