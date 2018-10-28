@@ -80,17 +80,17 @@ before_install:
         fi
       fi
 
-install:
-  - |
-      # Install OpenSSL as necessary
-      if [[ "${TESTING}" != "docs" ]]
-      then
-        # clang complains about unused-parameter a lot, redirect stderr
-        python3 Tools/ssl/multissltests.py --steps=library \
-            --base-directory ${HOME}/multissl \
-            --openssl ${OPENSSL} >/dev/null 2>&1
-      fi
-  - openssl version
+# install:
+#   - |
+#       # Install OpenSSL as necessary
+#       if [[ "${TESTING}" != "docs" ]]
+#       then
+#         # clang complains about unused-parameter a lot, redirect stderr
+#         python3 Tools/ssl/multissltests.py --steps=library \
+#             --base-directory ${HOME}/multissl \
+#             --openssl ${OPENSSL} >/dev/null 2>&1
+#       fi
+#   - openssl version
 
 # Travis provides only 2 cores, so don't overdo the parallelism and waste memory.
 before_script:
