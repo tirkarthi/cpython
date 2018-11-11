@@ -749,6 +749,20 @@ class NonCallableMock(Base):
         call_args = self.call_args
         if len(call_args) == 3:
             call_args = call_args[1:]
+
+        diffMsg = ''
+        if kwargs and self.call_args[1]:
+            import difflib
+
+            seq1 = kwargs
+            seq2 = self.call_args[1]
+            diffMsg = '\n' + '\n'.join(
+                difflib.ndiff(pprint.pformat(seq1).splitlines(),
+                              pprint.pformat(seq2).splitlines()))
+
+        if diffMsg:
+            message += diffMsg
+
         actual_string = self._format_mock_call_signature(*call_args)
         return message % (expected_string, actual_string)
 
