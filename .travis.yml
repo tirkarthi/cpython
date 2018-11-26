@@ -84,7 +84,7 @@ matrix:
         - ./venv/bin/python -m test.pythoninfo
       script:
         # Skip tests that re-run the entire test suite.
-        - xvfb-run ./venv/bin/python -m test --fail-env-changed -v test.test_embed
+        - xvfb-run ./venv/bin/python -m test.bisect -n 1 -v test_embed
       after_script:  # Probably should be after_success once test suite updated to run under coverage.py.
         # Make the `coverage` command available to Codecov w/ a version of Python that can parse all source files.
         - source ./venv/bin/activate
