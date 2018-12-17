@@ -632,8 +632,8 @@ class _BaseNetwork(_IPAddressBase):
             yield self._address_class(x)
 
     def __getitem__(self, n):
-        network = int(self.network_address)
-        broadcast = int(self.broadcast_address)
+        network = self.network_address._ip
+        broadcast = self.broadcast_address._ip
         if n >= 0:
             if network + n > broadcast:
                 raise IndexError('address out of range')
@@ -660,12 +660,12 @@ class _BaseNetwork(_IPAddressBase):
         try:
             return (self._version == other._version and
                     self.network_address == other.network_address and
-                    int(self.netmask) == int(other.netmask))
+                    self.netmask._ip == other.netmask._ip)
         except AttributeError:
             return NotImplemented
 
     def __hash__(self):
-        return hash(int(self.network_address) ^ int(self.netmask))
+        return hash(self.network_address._ip ^ self.netmask._ip)
 
     def __contains__(self, other):
         # always false if one is v4 and the other is v6.
@@ -691,8 +691,8 @@ class _BaseNetwork(_IPAddressBase):
     def broadcast_address(self):
         x = self._cache.get('broadcast_address')
         if x is None:
-            x = self._address_class(int(self.network_address) |
-                                    int(self.hostmask))
+            x = self._address_class(self.network_address._ip |
+                                    self.hostmask._ip)
             self._cache['broadcast_address'] = x
         return x
 
@@ -719,7 +719,7 @@ class _BaseNetwork(_IPAddressBase):
     @property
     def num_addresses(self):
         """Number of hosts in the current subnet."""
-        return int(self.broadcast_address) - int(self.network_address) + 1
+        return self.broadcast_address._ip - self.network_address._ip + 1
 
     @property
     def _address_class(self):
@@ -912,9 +912,9 @@ class _BaseNetwork(_IPAddressBase):
                 'prefix length diff %d is invalid for netblock %s' % (
                     new_prefixlen, self))
 
-        start = int(self.network_address)
-        end = int(self.broadcast_address) + 1
-        step = (int(self.hostmask) + 1) >> prefixlen_diff
+        start = self.network_address._ip
+        end = self.broadcast_address._ip + 1
+        step = (self.hostmask._ip + 1) >> prefixlen_diff
         for new_addr in range(start, end, step):
             current = self.__class__((new_addr, new_prefixlen))
             yield current
@@ -956,7 +956,7 @@ class _BaseNetwork(_IPAddressBase):
                 'current prefixlen is %d, cannot have a prefixlen_diff of %d' %
                 (self.prefixlen, prefixlen_diff))
         return self.__class__((
-            int(self.network_address) & (int(self.netmask) << prefixlen_diff),
+            self.network_address._ip & (self.netmask._ip << prefixlen_diff),
             new_prefixlen
             ))
 
@@ -1434,7 +1434,7 @@ class IPv4Interface(IPv4Address):
             return False
 
     def __hash__(self):
-        return self._ip ^ self._prefixlen ^ int(self.network.network_address)
+        return self._ip ^ self._prefixlen ^ self.network.network_address._ip
 
     __reduce__ = _IPAddressBase.__reduce__
 
@@ -1529,13 +1529,13 @@ class IPv4Network(_BaseV4, _BaseNetwork):
 
         self.network_address = IPv4Address(addr)
         self.netmask, self._prefixlen = self._make_netmask(mask)
-        packed = int(self.network_address)
-        if packed & int(self.netmask) != packed:
+        packed = self.network_address._ip
+        if packed & self.netmask._ip != packed:
             if strict:
                 raise ValueError('%s has host bits set' % self)
             else:
                 self.network_address = IPv4Address(packed &
-                                                   int(self.netmask))
+                                                   self.netmask._ip)
 
         if self._prefixlen == (self._max_prefixlen - 1):
             self.hosts = self.__iter__
@@ -2108,7 +2108,7 @@ class IPv6Interface(IPv6Address):
             return False
 
     def __hash__(self):
-        return self._ip ^ self._prefixlen ^ int(self.network.network_address)
+        return self._ip ^ self._prefixlen ^ self.network.network_address._ip
 
     __reduce__ = _IPAddressBase.__reduce__
 
@@ -2207,13 +2207,13 @@ class IPv6Network(_BaseV6, _BaseNetwork):
 
         self.network_address = IPv6Address(addr)
         self.netmask, self._prefixlen = self._make_netmask(mask)
-        packed = int(self.network_address)
-        if packed & int(self.netmask) != packed:
+        packed = self.network_address._ip
+        if packed & self.netmask._ip != packed:
             if strict:
                 raise ValueError('%s has host bits set' % self)
             else:
                 self.network_address = IPv6Address(packed &
-                                                   int(self.netmask))
+                                                   self.netmask._ip)
 
         if self._prefixlen == (self._max_prefixlen - 1):
             self.hosts = self.__iter__
@@ -2225,8 +2225,8 @@ class IPv6Network(_BaseV6, _BaseNetwork):
           Subnet-Router anycast address.
 
         """
-        network = int(self.network_address)
-        broadcast = int(self.broadcast_address)
+        network = self.network_address._ip
+        broadcast = self.broadcast_address._ip
         for x in range(network + 1, broadcast + 1):
             yield self._address_class(x)
 
