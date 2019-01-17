@@ -1142,6 +1142,67 @@ class Orderable_LT:
         return self.value == other.value
 
 
+class TestTopologicalStort(unittest.TestCase):
+
+    def test_simple_linear_graph(self):
+        graph = [("A", "B"), ("B", "C")]
+        expected = ["A", "B", "C"]
+        self.assertEqual(functools.topsort(graph), expected)
+
+    def test_simple_graph_with_fork(self):
+        graph = [("A", "C"), ("A", "B"), ("B", "C")]
+        expected = ["A", "B", "C"]
+        self.assertEqual(functools.topsort(graph), expected)
+
+    def test_graph_with_merge(self):
+        graph = [("A", "B"), ("A", "D"), ("D", "C"), ("C", "B")]
+        expected = ["A", "D", "C", "B"]
+        self.assertEqual(functools.topsort(graph), expected)
+
+    def test_graph_order(self):
+        graph = [("A", "B"), ("C", "D"), ("E", "F")]
+        expected = ["A", "C", "E", "B", "D", "F"]
+        self.assertEqual(functools.topsort(graph), expected)
+
+    def test_complex_cases(self):
+        test_cases= [
+            [('B', 'C'), ('M', 'N'), ('B', 'J'), ('L', 'N'), ('E', 'L'), ('F', 'G')],
+            [('E', 'K'), ('A', 'M'), ('A', 'D'), ('J', 'N'), ('I', 'L'), ('N', 'O')],
+            [('G', 'N'), ('C', 'L'), ('D', 'J'), ('C', 'J'), ('D', 'H'), ('E', 'L')],
+            [('B', 'K'), ('D', 'M'), ('E', 'J'), ('C', 'H'), ('F', 'G'), ('A', 'D')],
+            [('D', 'N'), ('K', 'O'), ('D', 'I'), ('D', 'H'), ('A', 'C'), ('F', 'L')],
+            [('I', 'J'), ('D', 'H'), ('A', 'G'), ('A', 'D'), ('A', 'I'), ('C', 'E')],
+            [('C', 'N'), ('A', 'H'), ('F', 'I'), ('K', 'N'), ('D', 'G'), ('A', 'F')],
+            [('I', 'N'), ('A', 'C'), ('B', 'O'), ('G', 'J'), ('F', 'K'), ('C', 'L')],
+        ]
+
+        expected_results = [
+            ['B', 'M', 'E', 'F', 'C', 'J', 'L', 'G', 'N'],
+            ['E', 'A', 'J', 'I', 'K', 'M', 'D', 'N', 'L', 'O'],
+            ['G', 'C', 'D', 'E', 'N', 'J', 'H', 'L'],
+            ['B', 'E', 'C', 'F', 'A', 'K', 'J', 'H', 'G', 'D', 'M'],
+            ['D', 'K', 'A', 'F', 'N', 'I', 'H', 'O', 'C', 'L'],
+            ['A', 'C', 'G', 'D', 'I', 'E', 'H', 'J'],
+            ['C', 'A', 'K', 'D', 'H', 'F', 'N', 'G', 'I'],
+            ['I', 'A', 'B', 'G', 'F', 'N', 'C', 'O', 'J', 'K', 'L'],
+        ]
+
+        for graph, expected in zip(test_cases, expected_results):
+            self.assertEqual(functools.topsort(graph), expected)
+
+    def test_simple_circle(self):
+        with self.assertRaises(functools.CycleError):
+            functools.topsort([("A", "B"), ("B", "A")])
+
+    def test_circle(self):
+        with self.assertRaises(functools.CycleError):
+            functools.topsort([("A", "B"), ("B", "C"), ("C", "A")])
+
+    def test_complex_cycle(self):
+        with self.assertRaises(functools.CycleError):
+            functools.topsort([("A",'B'), ("B","C"), ("Z","B"), ("E","Z"), ("C","E")])
+
+
 class TestLRU:
 
     def test_lru(self):

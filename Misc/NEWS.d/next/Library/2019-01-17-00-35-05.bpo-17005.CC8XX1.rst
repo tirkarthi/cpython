@@ -1,0 +1,2 @@
+Add a topological sort algorithm to the standard library in the
+:mod:`functools` module. Patch by Pablo Galindo.

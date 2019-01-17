@@ -14,7 +14,7 @@ __all__ = ['update_wrapper', 'wraps', 'WRAPPER_ASSIGNMENTS', 'WRAPPER_UPDATES',
            'partialmethod', 'singledispatch', 'singledispatchmethod']
 
 from abc import get_cache_token
-from collections import namedtuple
+from collections import namedtuple, defaultdict
 # import types, weakref  # Deferred to single_dispatch()
 from reprlib import recursive_repr
 from _thread import RLock
@@ -191,6 +191,65 @@ def total_ordering(cls):
             opfunc.__name__ = opname
             setattr(cls, opname, opfunc)
     return cls
+
+
+################################################################################
+### topological sort
+################################################################################
+
+class CycleError(Exception):
+    """Cycle Error"""
+    pass
+
+
+def topsort(pairlist):
+    """Topologically sort a list of (parent, child) pairs.
+    Return a list of the elements in dependency order (parent to child order).
+    >>> topsort([(1,2), (3,4), (5,6), (1,3), (1,5), (1,6), (2,5)])
+    [1, 2, 3, 5, 4, 6]
+    >>> topsort([(1,2), (1,3), (2,4), (3,4), (5,6), (4,5)])
+    [1, 2, 3, 4, 5, 6]
+    >>> topsort([(1,2), (2,3), (3,2)])
+    Traceback (most recent call last):
+    CycleError: ([1], {2: 1, 3: 1}, {2: [3], 3: [2]})
+    """
+    # This implementation is based on Kahn's algorithm.
+
+    # Each element is the number of predecessors
+    num_parents = defaultdict(int)
+    # Each element is the number of successors
+    children = defaultdict(dict)
+    for parent, child in pairlist:
+        # Make sure every element is a key in num_parents.
+        if parent not in num_parents:
+            num_parents[parent] = 0
+        # Increment the number of parents of this child
+        num_parents[child] += 1
+
+        # Add the parent to the collection of parents
+        # relaying of the ordered nature of dictionaries
+        # to preserve stability.
+        children[parent][child] = None
+
+    # Start with all elements that do not have a parent
+    result = [elem for (elem, parents) in num_parents.items() if not parents]
+
+    # For everything in result, reduce the order of the parent count of its children.
+    for parent in result:
+        del num_parents[parent]
+        if parent not in children:
+            continue
+        for child in children[parent]:
+            num_parents[child] -= 1
+            if num_parents[child] == 0:
+                result.append(child)
+        # Remove parent to better error reporting if a cycle is found.
+        del children[parent]
+
+    if num_parents:
+        # If we still have elements with childs, there is a cycle.
+        raise CycleError(result, dict(num_parents), dict(children))
+    return result
 
 
 ################################################################################

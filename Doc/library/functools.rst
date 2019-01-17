@@ -208,6 +208,55 @@ The :mod:`functools` module defines the following functions:
       Returning NotImplemented from the underlying comparison function for
       unrecognised types is now supported.
 
+.. function:: topsort(pairs)
+   Topologically sort a list of (parent, child) pairs. Return a sequence of
+   the elements in dependency order (parent to child order).
+
+   If a dependency cycle is found it raises :exc:`CycleError`.
+
+   This function can be used directly with a graph given by 2-tuples
+   specifiying the relationships between elements::
+
+      >>> topsort([(1,2), (3,4), (5,6), (1,3), (1,5), (1,6), (2,5)])
+      [1, 2, 3, 5, 4, 6]
+      >>> topsort([(1,2), (1,3), (2,4), (3,4), (5,6), (4,5)])
+      [1, 2, 3, 4, 5, 6]
+
+   If we provide a cyclic graph, :exc:`CycleError` will be raised::
+
+      >>> topsort([(1,2), (2,3), (3,2)])
+      Traceback (most recent call last):
+      CycleError: ([1], {2: 1, 3: 1}, {2: [3], 3: [2]})
+
+   This function can be used to implement a simple version of the C3
+   linearization algorithm used by Python to calculate the Method Resolution
+   Order (MRO) of a derived class::
+
+      from itertools import tee
+      def c3_linearization(inheritance_seqs):
+          graph = set()
+          for seq in inheritance_seqs:
+              a, b = tee(seq)
+              next(b, None)
+              graph.update([*zip(a,b)])
+          return topsort(graph)
+
+   As a test, we can compare with the MRO of a simple diamond inheritance::
+
+      >> class A: pass
+      >> class B(A): pass
+      >> class C(A): pass
+      >> class D(B, C): pass
+
+      >>D.__mro__
+      (__main__.D, __main__.B, __main__.C, __main__.A, object)
+
+      >>c3_linearization([(D, B, A, object), (D, C, A, object)])
+      ['__main__.D', '__main__.B', '__main__.C', '__main__.A', 'object']
+
+   .. versionadded:: 3.8
+
+
 .. function:: partial(func, *args, **keywords)
 
    Return a new :ref:`partial object<partial-objects>` which when called
