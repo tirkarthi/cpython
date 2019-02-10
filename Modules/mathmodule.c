@@ -2562,7 +2562,7 @@ math_prod_impl(PyObject *module, PyObject *iterable, PyObject *start)
                 /* Continue if there is no overflow */
                 if (overflow == 0
                     && x < INT_MAX && x > INT_MIN
-                    && !(b != 0 && x / i_result != b)) {
+                    && !(b != 0 && i_result != 0 && x / i_result != b)) {
                     i_result = x;
                     Py_DECREF(item);
                     continue;
