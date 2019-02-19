@@ -3283,6 +3283,9 @@ type_setattro(PyTypeObject *type, PyObject *name, PyObject *value)
             return -1;
         }
     }
+    if (PyUnicode_Check(name) && (!strcmp(PyUnicode_AsUTF8(name), "__init_subclass__") || !strcmp(PyUnicode_AsUTF8(name), "__class_getitem__")) && PyFunction_Check(value)) {
+        value = PyClassMethod_New(value);
+    }
     else {
         /* Will fail in _PyObject_GenericSetAttrWithDict. */
         Py_INCREF(name);
