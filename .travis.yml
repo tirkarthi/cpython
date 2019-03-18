@@ -20,14 +20,12 @@ env:
     # Set rpath with env var instead of -Wl,-rpath linker flag
     # OpenSSL ignores LDFLAGS when linking bin/openssl
     - LD_RUN_PATH="${OPENSSL_DIR}/lib"
-    # python3.7 is in PATH (via pyenv), but not available sometime.
-    - PYTHON_FOR_REGEN=python3.6
 
-branches:
-  only:
-    - master
-    - /^\d\.\d$/
-    - buildbot-custom
+# branches:
+#   only:
+#     - master
+#     - /^\d\.\d$/
+#     - buildbot-custom
 
 matrix:
   fast_finish: true
@@ -82,6 +80,7 @@ matrix:
 
 
 before_install:
+  - pyenv global system 3.7
   - set -e
   - |
       # Check short-circuit conditions
@@ -121,8 +120,6 @@ install:
 
 # Travis provides only 2 cores, so don't overdo the parallelism and waste memory.
 before_script:
-  - python3 -VV
-  - which python3
   - ./configure --with-pydebug
   - make -j4 regen-all
   - changes=`git status --porcelain`
