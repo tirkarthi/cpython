@@ -80,6 +80,7 @@ matrix:
 
 
 before_install:
+  - pyenv global system 3.6
   - set -e
   - |
       # Check short-circuit conditions
