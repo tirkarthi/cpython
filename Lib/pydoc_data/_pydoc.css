@@ -4,3 +4,231 @@
     Contents of this file are subject to change without notice.
 
 */
+
+/*  Setting underline on hover only is less busy. */
+a:link{text-decoration: none;}
+a:visited{text-decoration: none;}
+a:hover, a:active{text-decoration: underline;}
+
+body{
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    font-size: 100%;       /* Improves scaling consistency. */
+    color: #000000;
+    background-color: #f8f8f8;
+}
+
+
+/*  Contains header, navbar, and content and sets page padding. */
+#page{padding: 1em;}
+
+
+/* Contains title, version, and navigation bar.  */
+#page-header{width: 100%;}
+
+
+/* Title */
+#page-title{
+    display: inline-block;
+    margin: 0;
+    padding: 0 2em 0 0;
+    color: #5599cc;
+    background-color: #f8f8f8;
+}
+
+/* Version info */
+#python_version{
+    display: inline-block;
+    margin: 0;
+    padding: 0;
+    font-style: italic;
+    color: #888888;
+    background-color: #f8f8f8;
+}
+
+/* Navigation bar. */
+#navbar{
+    margin: 0;
+    padding: .2em;
+    color: #000000;
+    background-color: #f0f0f4;
+    border: 1px solid #888888;
+    overflow: auto;
+}
+#navbar li{
+    margin: 0;
+    padding: .25em .5em .25em .5em;
+    list-style: none;
+    display: inline-block;
+}
+#navbar form{
+    margin: 0;
+    padding: 0;
+    display: inline-block;
+}
+#navbar a{padding-right: 1em;}
+
+
+/* Contains main content. */
+#page-content{
+    margin-top: 1em;
+    overflow: auto;
+}
+
+/* Content title. */
+#subject{
+    margin: 0;
+    padding: .25em;
+    color: #ffffff;
+    background-color: #5599cc;
+}
+
+
+/* A content section that has a title.
+
+   Combine these with a section type to set the
+   title colors.
+
+   Use: <dl class="section modules">
+        <dl class="subsection methods">
+ */
+dl.section dt{
+    font-weight: bold;
+    padding: .75em;
+}
+dl.section dd{
+    padding: 1em;
+    color: #000000;
+    background-color: #f8f8f8;
+}
+
+/* A section with no left vertical bar. */
+dl.subsection dt{
+    font-weight: bold;
+    padding: .25em .25em .25em .5em;
+}
+dl.subsection dd{
+    margin-left: 0;
+    padding: 1ex;
+    color: #000000;
+    background-color: #f8f8f8;
+}
+
+/* Set title colors for section and sub-section. */
+dl.modules{
+    color: #ffffff;
+    background-color: #aa55cc;
+}
+
+dl.module{}                     /* These are not used yet. */
+
+dl.classes{}
+
+dl.class{}
+
+dl.methods{}
+
+dl.method{}
+
+dl.functions{}
+
+dl.function{}
+
+dl.data{}
+
+ul.data-item li{}
+
+dl.file{
+    color: #ffffff;
+    background-color: #009900;
+}
+
+dl.topics{
+    color: #ffffff;
+    background-color: #5f99cc;
+}
+
+dl.topic{
+    color: #ffffff;
+    background-color: #009900;
+}
+
+dl.error{
+    color: #ffffff;
+    background-color: #cc4444;
+}
+
+
+
+/* index */
+ul.index-lines{padding-left: 9ex;}
+ul.index-lines li{
+    text-indent: -8ex;
+    list-style: none;
+}
+
+
+/* index aligned in columns */
+ul.index-columns{
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    overflow: auto;             /* Limit floats. */
+}
+ul.index-columns li{
+    margin: 0 1em .2em 0;
+    width: 15em;
+    float: left;
+}
+
+
+/* links to modules and packages */
+span.module {}
+
+span.package {
+    font-style: italic;
+    color: #555;
+    background-color: #f8f8f8;
+}
+span.package a{
+    font-style: normal;
+    font-weight: bold;
+    font-size: 98%;             /* Bold effects floats without this. */
+}
+
+
+pre.docstring{
+    margin: 0;
+    padding: .25em;
+}
+
+
+pre.topic-info{
+    margin: 0;
+    padding: .25em;
+    color: #000000;
+    background-color: #ffffff;
+    border: 1px solid #aaaaaa;
+}
+
+
+pre.python-code{
+    margin: 0;
+    padding: .25em;
+    color: #000000;
+    background-color: #ffffff;
+    border: 1px solid #aaaaaa;
+    overflow: auto;
+}
+pre.python-code code{
+    color: #000000;
+    background-color: #f4f4ff;  /* Shows white space. */
+}
+
+
+#page-footer p{
+    color: #888888;
+    background-color: #f8f8f8;
+    text-align: right;
+}

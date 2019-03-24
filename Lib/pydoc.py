@@ -473,13 +473,31 @@ class HTMLDoc(Doc):
 
     def page(self, title, contents):
         """Format an HTML page."""
-        return '''\
-<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
-<html><head><title>Python: %s</title>
-<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-</head><body bgcolor="#f0f0f8">
-%s
-</body></html>''' % (title, contents)
+
+        values = dict(title=title,
+                      css_path="pydoc_data/_pydoc.css",
+                      header=html_header(),
+                      content=contents,
+        )
+        template = \
+'''<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN"
+        "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+  <head>
+    <title>PyDoc: {title}</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <link rel="stylesheet" type="text/css" href="{css_path}">
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+  </head>
+  <body>
+    <div id=page>
+    {header}
+    {content}
+    </div>
+  </body>
+</html>
+'''
+        return template.format(**values)
 
     def heading(self, title, fgcol, bgcol, extras=''):
         """Format a page heading."""
@@ -2344,66 +2362,148 @@ def _url_handler(url, content_type="text/html"):
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
 <html><head><title>Pydoc: %s</title>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
 %s</head><body bgcolor="#f0f0f8">%s<div style="clear:both;padding-top:.5em;">%s</div>
 </body></html>''' % (title, css_link, html_navbar(), contents)
 
         def filelink(self, url, path):
             return '<a href="getfile?key=%s">%s</a>' % (url, path)
 
+        def _index_section(self, title, items, css_class):
+            """Make an index sub-section"""
+            items = '</li>\n<li>'.join(items)
+            values = dict(title = title,
+                          items = items,
+                          css_class=css_class,
+            )
+            template = ('  <dt>{title}</dt>'
+                        '  <dd>'
+                        '    <ul class="{css_class}">'
+                        '      <li>{items}</li>'
+                        '    </ul>'
+                        '  </dd>'
+            )
+            return template.format(**values)
+
+        def index_columns(self, title, items, css_class):
+            """Create a index section with columns."""
+            section = html._index_section(title, items,
+                                      css_class="index-columns")
+            template = ('<dl class="{css_class}">'
+                        '  {section}'
+                        '</dl>'
+            )
+            return template.format(css_class=css_class, section=section)
+
+        def index_lines(self, title, items, css_class):
+            """Create an index section with line."""
+            section = html._index_section(title, items,
+                                          css_class="index-lines")
+            template = ('<dl class="{css_class}">'
+                        '  {section}'
+                        '</dl>'
+            )
+            return template.format(css_class=css_class, section=section)
 
     html = _HTMLDoc()
 
+    def html_header():
+        values = dict(version=platform.python_version(),
+                      build=platform.python_build()[0],
+                      compiler=platform.python_compiler(),
+                      platform=platform.platform(terse=True),
+                     )
+        template = \
+"""
+<div id="page-header">
+    <h1 id="page-title">PyDoc</h1>
+    <p id="python_version">
+      Python {version} - [{build}, {compiler}, {platform}]
+    <ul id="navbar">
+        <li><form action="get"><div>
+          <input name="key" size="15" type="text">
+          <input value="Get" type="submit">
+        </div></form></li>
+        <li><form action="search"><div>
+            <input name="key" size="15" type="text">
+            <input value="Search" type="submit">
+        </div></form></li>
+        <li>
+           <a href="index.html">modules</a>
+           <a href="keywords.html">keywords</a>
+           <a href="topics.html">topics</a>
+        </li>
+    </ul>
+</div> <!-- end header -->
+"""
+        return template.format(**values)
+
+    def html_modules():
+        """Module Index page."""
+        link_list = ['<a href="%s.html">%s</a>' % (name, name)
+                     for name in sys.builtin_module_names
+                     if name != '__main__']
+        contents = [html.index_columns('Built-in modules', link_list,
+                                       css_class='section modules')]
+        shadowed = set()
+        for dir in sys.path:
+           modules = []
+           for importer, name, ispkg in pkgutil.iter_modules([dir]):
+               if name not in shadowed:
+                   modules.append((name, ispkg))
+                   shadowed.add(name)
+           modules.sort()
+           links = []
+           for name, ispkg in modules:
+               if ispkg:
+                   template = ('<span class="package"><a href="{name}.html">'
+                               '{name}</a> (package)</span>')
+               else:
+                   template = ('<a class="module" href="{name}.html">'
+                               '{name}</a>')
+               link = template.format(name=name)
+               links.append(link)
+           contents.append(html.index_columns(dir,
+                           links, css_class='section modules'))
+        content = ''.join(contents)
+        template = ('<div id="page-content">'
+                    '  <h2 id="subject">Index of Modules</h2>'
+                    '  {content}'
+                    '</div>'
+                    '<div id="page-footer">'
+                    '  <p>PyDoc by Ka-Ping Yee&lt;ping@lfw.org&gt;'
+                    '</div>'
+                   )
+        return 'Index of Modules', template.format(content=content)
+
     def html_navbar():
-        version = html.escape("%s [%s, %s]" % (platform.python_version(),
-                                               platform.python_build()[0],
-                                               platform.python_compiler()))
+        version = "%s [%s, %s]" % (platform.python_version(),
+                                   platform.python_build()[0],
+                                   platform.python_compiler())
         return """
             <div style='float:left'>
-                Python %s<br>%s
+                Python %s<br>%s<br><br>
             </div>
             <div style='float:right'>
-                <div style='text-align:center'>
+                <div style='textalign:center'>
                   <a href="index.html">Module Index</a>
                   : <a href="topics.html">Topics</a>
                   : <a href="keywords.html">Keywords</a>
                 </div>
                 <div>
-                    <form action="get" style='display:inline;'>
+                    <form action="get" style='float:left'>
                       <input type=text name=key size=15>
                       <input type=submit value="Get">
-                    </form>&nbsp;
-                    <form action="search" style='display:inline;'>
+                      &nbsp;&nbsp;&nbsp;
+                    </form>
+                    <form action="search" style='float:right'>
                       <input type=text name=key size=15>
                       <input type=submit value="Search">
                     </form>
                 </div>
             </div>
-            """ % (version, html.escape(platform.platform(terse=True)))
-
-    def html_index():
-        """Module Index page."""
-
-        def bltinlink(name):
-            return '<a href="%s.html">%s</a>' % (name, name)
-
-        heading = html.heading(
-            '<big><big><strong>Index of Modules</strong></big></big>',
-            '#ffffff', '#7799ee')
-        names = [name for name in sys.builtin_module_names
-                 if name != '__main__']
-        contents = html.multicolumn(names, bltinlink)
-        contents = [heading, '<p>' + html.bigsection(
-            'Built-in Modules', '#ffffff', '#ee77aa', contents)]
-
-        seen = {}
-        for dir in sys.path:
-            contents.append(html.index(dir, seen))
-
-        contents.append(
-            '<p align=right><font color="#909090" face="helvetica,'
-            'arial"><strong>pydoc</strong> by Ka-Ping Yee'
-            '&lt;ping@lfw.org&gt;</font>')
-        return 'Index of Modules', ''.join(contents)
+            <div clear='all'>&nbsp;</div>
+            """ % (version, platform.platform(terse=True))
 
     def html_search(key):
         """Search results page."""
@@ -2420,64 +2520,60 @@ def _url_handler(url, content_type="text/html"):
             def onerror(modname):
                 pass
             ModuleScanner().run(callback, key, onerror=onerror)
-
-        # format page
-        def bltinlink(name):
-            return '<a href="%s.html">%s</a>' % (name, name)
-
-        results = []
-        heading = html.heading(
-            '<big><big><strong>Search Results</strong></big></big>',
-            '#ffffff', '#7799ee')
-        for name, desc in search_result:
-            results.append(bltinlink(name) + desc)
-        contents = heading + html.bigsection(
-            'key = %s' % key, '#ffffff', '#ee77aa', '<br>'.join(results))
-        return 'Search Results', contents
+        link_list = ['<a href="%s.html">%s</a>%s' % (name, name, desc)
+                     for name, desc in search_result]
+        content = html.index_lines('key = %s' % key, link_list,
+                                   css_class='section modules')
+        template = ('<div id="page-content">'
+                    '  <h2 id="subject">Search Results</h2>'
+                    '  {content}'
+                    '</div>'
+                   )
+        return 'Search Results', template.format(content=content)
 
     def html_getfile(path):
         """Get and display a source file listing safely."""
         path = urllib.parse.unquote(path)
         with tokenize.open(path) as fp:
             lines = html.escape(fp.read())
-        body = '<pre>%s</pre>' % lines
-        heading = html.heading(
-            '<big><big><strong>File Listing</strong></big></big>',
-            '#ffffff', '#7799ee')
-        contents = heading + html.bigsection(
-            'File: %s' % path, '#ffffff', '#ee77aa', body)
-        return 'getfile %s' % path, contents
+        title = 'getfile %s' % path.replace('%20', ' ')
+        template = ('<div id="page-content">'
+                    '  <h2 id="subject">File Listing</h2>'
+                    '  <dl class="section file">'
+                    '    <dt>File: {path}</dt>'
+                    '    <dd><pre class="python-code"><code'
+                    '         >{lines}</code></pre>'
+                    '    </dd>'
+                    '  </dl>'
+                    '</div>'
+                   )
+        return title, template.format(path=path, lines=lines)
 
     def html_topics():
         """Index of topic texts available."""
-
-        def bltinlink(name):
-            return '<a href="topic?key=%s">%s</a>' % (name, name)
-
-        heading = html.heading(
-            '<big><big><strong>INDEX</strong></big></big>',
-            '#ffffff', '#7799ee')
-        names = sorted(Helper.topics.keys())
-
-        contents = html.multicolumn(names, bltinlink)
-        contents = heading + html.bigsection(
-            'Topics', '#ffffff', '#ee77aa', contents)
-        return 'Topics', contents
+        link_list = ['<a href="%s.html">%s</a>' % (name, name)
+                     for name in sorted(Helper.topics.keys())]
+        content = html.index_columns('Topics', link_list,
+                                     css_class="section topics")
+        template = ('<div id="page-content">'
+                    '  <h2 id="subject">Index</h2>'
+                    '  {content}'
+                    '</div>'
+                   )
+        return 'Topics', template.format(content=content)
 
     def html_keywords():
         """Index of keywords."""
-        heading = html.heading(
-            '<big><big><strong>INDEX</strong></big></big>',
-            '#ffffff', '#7799ee')
-        names = sorted(Helper.keywords.keys())
-
-        def bltinlink(name):
-            return '<a href="topic?key=%s">%s</a>' % (name, name)
-
-        contents = html.multicolumn(names, bltinlink)
-        contents = heading + html.bigsection(
-            'Keywords', '#ffffff', '#ee77aa', contents)
-        return 'Keywords', contents
+        link_list = ['<a href="%s.html">%s</a>' % (name, name)
+                     for name in sorted(Helper.keywords.keys())]
+        content = html.index_columns('Keywords', link_list,
+                                     css_class="section topics")
+        template = ('<div id="page-content">'
+                    '  <h2 id="subject">Index</h2>'
+                    '  {content}'
+                    '</div>'
+                   )
+        return 'Keywords', template.format(content=content)
 
     def html_topicpage(topic):
         """Topic or keyword help page."""
@@ -2485,25 +2581,49 @@ def _url_handler(url, content_type="text/html"):
         htmlhelp = Helper(buf, buf)
         contents, xrefs = htmlhelp._gettopic(topic)
         if topic in htmlhelp.keywords:
-            title = 'KEYWORD'
+            title = 'Keyword'
         else:
-            title = 'TOPIC'
-        heading = html.heading(
-            '<big><big><strong>%s</strong></big></big>' % title,
-            '#ffffff', '#7799ee')
-        contents = '<pre>%s</pre>' % html.markup(contents)
-        contents = html.bigsection(topic , '#ffffff','#ee77aa', contents)
-        if xrefs:
-            xrefs = sorted(xrefs.split())
+            title = 'Topic'
+        text = html.markup(contents)
+        link_list = ['<a href="%s.html">%s</a>' % (name, name)
+                     for name in sorted(xrefs.split())]
+        xrefs = html.index_columns('Related help Topics', link_list,
+                                   css_class="section topics")
+        values = dict(
+            title=title,
+            topic=topic,
+            text=text,
+            xrefs=xrefs,
+            )
+        template = ('<div id="page-content">'
+                    '  <h2 id="subject">{title}</h2>'
+                    '  <dl class="section topic">'
+                    '    <dt>{topic}</dt>'
+                    '    <dd><pre class="topic-info">{text}</pre></dd>'
+                    '  </dl>'
+                    '  {xrefs}'
+                    '</div>'
+                   )
+        return '%s %s' % (title, topic), template.format(**values)
 
-            def bltinlink(name):
-                return '<a href="topic?key=%s">%s</a>' % (name, name)
-
-            xrefs = html.multicolumn(xrefs, bltinlink)
-            xrefs = html.section('Related help topics: ',
-                                 '#ffffff', '#ee77aa', xrefs)
-        return ('%s %s' % (title, topic),
-                ''.join((heading, contents, xrefs)))
+    def html_error(exc, url):
+        values = dict(
+            title = url,
+            exc = repr(exc),
+            err = str(exc),
+            )
+        template = ('<div id="page-content">'
+                    '  <h2 id="subject">Error</h2>'
+                    '  <dl class="section error">'
+                    '    <dt>{title}</dt>'
+                    '    <dd>'
+                    '      <p>{exc}'
+                    '      <p>{err}'
+                    '    </dd>'
+                    '  </dl>'
+                    '</div>'
+                   )
+        return "Error - " + url, template.format(**values)
 
     def html_getobj(url):
         obj = locate(url, forceload=1)
@@ -2529,35 +2649,25 @@ def _url_handler(url, content_type="text/html"):
         if url.endswith('.html'):
             url = url[:-5]
         try:
-            if url in ("", "index"):
-                title, content = html_index()
+            if url.endswith('.html'):
+                url = url[:-5]
+            if url.startswith('/'):
+                url = url[1:]
+            if url.startswith("get?key="):
+                url = url[8:]
+            if url in ("", ".", "index"):
+                title, content = html_modules()
             elif url == "topics":
                 title, content = html_topics()
             elif url == "keywords":
                 title, content = html_keywords()
-            elif '=' in url:
-                op, _, url = url.partition('=')
-                if op == "search?key":
-                    title, content = html_search(url)
-                elif op == "getfile?key":
-                    title, content = html_getfile(url)
-                elif op == "topic?key":
-                    # try topics first, then objects.
-                    try:
-                        title, content = html_topicpage(url)
-                    except ValueError:
-                        title, content = html_getobj(url)
-                elif op == "get?key":
-                    # try objects first, then topics.
-                    if url in ("", "index"):
-                        title, content = html_index()
-                    else:
-                        try:
-                            title, content = html_getobj(url)
-                        except ValueError:
-                            title, content = html_topicpage(url)
-                else:
-                    raise ValueError('bad pydoc url')
+            elif url.startswith("search?key="):
+                title, content = html_search(url[11:])
+            elif url.startswith("getfile?key="):
+                path = url[12:]
+                title, content = html_getfile(path)
+            elif url in Helper.keywords or url in Helper.topics:
+                title, content = html_topicpage(url)
             else:
                 title, content = html_getobj(url)
         except Exception as exc:
