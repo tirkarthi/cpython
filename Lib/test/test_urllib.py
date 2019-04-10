@@ -329,6 +329,14 @@ class urlopen_HttpTests(unittest.TestCase, FakeHTTPMixin, FakeFTPMixin):
         finally:
             self.unfakehttp()
 
+    def test_url_newline(self):
+        self.fakehttp(b"HTTP/1.1 200 OK\r\n\r\nHello!")
+        try:
+            with self.assertRaises(ValueError):
+                resp = urlopen("http://127.0.0.1:1234/?q=HTTP/1.1\r\nHeader: Value")
+        finally:
+            self.unfakehttp()
+
     def test_read_0_9(self):
         # "0.9" response accepted (but not "simple responses" without
         # a status line)
@@ -1511,6 +1519,11 @@ class RequestTests(unittest.TestCase):
         self.assertEqual(request.get_method(), 'GET')
         request.method = 'HEAD'
         self.assertEqual(request.get_method(), 'HEAD')
+
+    def test_url_newline(self):
+        Request = urllib.request.Request
+        with self.assertRaises(ValueError):
+            resp = Request("http://127.0.0.1:1234/?q=HTTP/1.1\r\nHeader: Value")
 
 
 class URL2PathNameTests(unittest.TestCase):
