@@ -1330,6 +1330,10 @@ _PyStack_UnpackDict(PyObject *const *args, Py_ssize_t nargs, PyObject *kwargs,
         return 0;
     }
 
+    if (PyArg_ValidateKeywordArguments(kwargs) == 0) {
+        return -1;
+    }
+
     if ((size_t)nargs > PY_SSIZE_T_MAX / sizeof(stack[0]) - (size_t)nkwargs) {
         PyErr_NoMemory();
         return -1;
