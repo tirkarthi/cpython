@@ -27,7 +27,7 @@ byte-code cache files in the directory containing the source code.
    Exception raised when an error occurs while attempting to compile the file.
 
 
-.. function:: compile(file, cfile=None, dfile=None, doraise=False, optimize=-1, invalidation_mode=PycInvalidationMode.TIMESTAMP)
+.. function:: compile(file, cfile=None, dfile=None, doraise=False, quite=0, optimize=-1, invalidation_mode=PycInvalidationMode.TIMESTAMP)
 
    Compile a source file to byte-code and write out the byte-code cache file.
    The source code is loaded from the file named *file*.  The byte-code is
@@ -40,7 +40,8 @@ byte-code cache files in the directory containing the source code.
    when an error is encountered while compiling *file*. If *doraise* is false
    (the default), an error string is written to ``sys.stderr``, but no exception
    is raised.  This function returns the path to byte-compiled file, i.e.
-   whatever *cfile* value was used.
+   whatever *cfile* value was used. If *quite* is False or 0, a full output will
+   be returned, onlly errors when 1 and nothing when 2.
 
    If the path that *cfile* becomes (either explicitly specified or computed)
    is a symlink or non-regular file, :exc:`FileExistsError` will be raised.
@@ -82,6 +83,8 @@ byte-code cache files in the directory containing the source code.
       overrides the value of the *invalidation_mode* argument, and determines
       its default value instead.
 
+   .. versionchanged:: 3.8.0
+      The *quiet* parameter was added as requested by :bpo:`22640`
 
 .. class:: PycInvalidationMode
 

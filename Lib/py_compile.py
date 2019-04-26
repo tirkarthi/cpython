@@ -76,7 +76,7 @@ def _get_default_invalidation_mode():
         return PycInvalidationMode.TIMESTAMP
 
 
-def compile(file, cfile=None, dfile=None, doraise=False, optimize=-1,
+def compile(file, cfile=None, dfile=None, doraise=False, quiet=0, optimize=-1,
             invalidation_mode=None):
     """Byte-compile one Python source file to Python bytecode.
 
@@ -91,6 +91,8 @@ def compile(file, cfile=None, dfile=None, doraise=False, optimize=-1,
         will be printed, and the function will return to the caller. If an
         exception occurs and this flag is set to True, a PyCompileError
         exception will be raised.
+    :param quiet: Return full output with False or 0, errors only with 1,
+        no output with 2.
     :param optimize: The optimization level for the compiler.  Valid values
         are -1, 0, 1 and 2.  A value of -1 means to use the optimization
         level of the current interpreter, as given by -O command line options.
@@ -143,10 +145,11 @@ def compile(file, cfile=None, dfile=None, doraise=False, optimize=-1,
                                      _optimize=optimize)
     except Exception as err:
         py_exc = PyCompileError(err.__class__, err, dfile or file)
-        if doraise:
+        if doraise and quiet < 2:
             raise py_exc
         else:
-            sys.stderr.write(py_exc.msg + '\n')
+            if quiet < 2:
+                sys.stderr.write(py_exc.msg + '\n')
             return
     try:
         dirname = os.path.dirname(cfile)
@@ -191,21 +194,24 @@ def main(args=None):
                 break
             filename = filename.rstrip('\n')
             try:
-                compile(filename, doraise=True)
+                compile(filename, doraise=True, quiet=0)
             except PyCompileError as error:
                 rv = 1
-                sys.stderr.write("%s\n" % error.msg)
+                if args.quiet < 2:
+                    sys.stderr.write("%s\n" % error.msg)
             except OSError as error:
                 rv = 1
-                sys.stderr.write("%s\n" % error)
+                if args.quiet < 2:
+                    sys.stderr.write("%s\n" % error)
     else:
         for filename in args:
             try:
-                compile(filename, doraise=True)
+                compile(filename, doraise=True, quiet=0)
             except PyCompileError as error:
                 # return value to indicate at least one failure
                 rv = 1
-                sys.stderr.write("%s\n" % error.msg)
+                if args.quiet < 2:
+                    sys.stderr.write("%s\n" % error.msg)
     return rv
 
 if __name__ == "__main__":
