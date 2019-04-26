@@ -92,7 +92,7 @@ def compile(file, cfile=None, dfile=None, doraise=False, quiet=0, optimize=-1,
         exception occurs and this flag is set to True, a PyCompileError
         exception will be raised.
     :param quiet: Return full output with False or 0, errors only with 1,
-        no output with 2.
+        and no output with 2.
     :param optimize: The optimization level for the compiler.  Valid values
         are -1, 0, 1 and 2.  A value of -1 means to use the optimization
         level of the current interpreter, as given by -O command line options.

@@ -84,7 +84,9 @@ byte-code cache files in the directory containing the source code.
       its default value instead.
 
    .. versionchanged:: 3.8.0
-      The *quiet* parameter was added as requested by :bpo:`22640`
+      The *quiet* parameter was added to support silent mode. The function
+      now returns full output with False or 0, errors only with 1, and
+      no output with 2
 
 .. class:: PycInvalidationMode
 
