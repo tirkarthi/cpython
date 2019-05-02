@@ -302,6 +302,10 @@ class TestLoader(object):
                 the_module = sys.modules[start_dir]
                 top_part = start_dir.split('.')[0]
                 try:
+                    filepath = the_module.__file__
+                    # __file__ is None for empty packages. Hence return empty list of tests.
+                    if filepath == None:
+                        return self.suiteClass([])
                     start_dir = os.path.abspath(
                        os.path.dirname((the_module.__file__)))
                 except AttributeError:

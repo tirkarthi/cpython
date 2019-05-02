@@ -1,3 +1,4 @@
+import os
 import os.path
 from os.path import abspath
 import re
@@ -867,6 +868,30 @@ class TestDiscovery(unittest.TestCase):
                     self.assertEqual(str(cm.exception),
                                      'don\'t know how to discover from {!r}'
                                      .format(package))
+
+
+    def test_empty_package_discovery(self):
+        # bpo-36789: Return zero test cases when using discovery in
+        # empty packages.
+
+        with support.temp_dir() as path:
+            import textwrap
+            script = textwrap.dedent('''
+            import unittest
+
+            class Foo(unittest.TestCase):
+                def test_foo(self): pass
+            ''')
+            dirname, basename = os.path.split(path)
+            os.mkdir(os.path.join(path, 'test2'))
+            from test.support import script_helper
+            script_helper.make_script(os.path.join(path, 'test2'), 'test_foo.py', script)
+
+            with support.DirsOnSysPath(dirname):
+                loader = unittest.TestLoader()
+                empty_package = f"{basename}.test2"
+                tests_count = loader.discover(empty_package).countTestCases()
+                self.assertEqual(loader.discover(empty_package).countTestCases(), 0)
 
 
 if __name__ == '__main__':
