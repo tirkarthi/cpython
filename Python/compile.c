@@ -2614,7 +2614,6 @@ compiler_async_for(struct compiler *c, stmt_ty s)
         return compiler_error(c, "'async for' outside async function");
     }
 
-
     start = compiler_new_block(c);
     except = compiler_new_block(c);
     end = compiler_new_block(c);
