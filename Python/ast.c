@@ -5022,6 +5022,7 @@ fstring_find_expr(const char **str, const char *end, int raw, int recurse_lvl,
                             spec. */
     int equal_flag = 0; /* Are we using the = feature? */
     PyObject *expr_text = NULL; /* The text of the expression, used for =. */
+    PyObject *location = NULL; /* Store filename:lineno data for the node */
     const char *expr_text_end;
 
     /* 0 if we're not in a string, else the quote char we're trying to
@@ -5230,6 +5231,9 @@ fstring_find_expr(const char **str, const char *end, int raw, int recurse_lvl,
     if (equal_flag) {
         Py_ssize_t len = expr_text_end-expr_start;
         expr_text = PyUnicode_FromStringAndSize(expr_start, len);
+	location = PyUnicode_FromFormat("[%S:%d] ", c->c_filename, LINENO(n));
+	expr_text = PyUnicode_Concat(location, expr_text);
+	Py_XDECREF(location);
         if (!expr_text)
             goto error;
     }
