@@ -201,6 +201,8 @@ The Mock Class
 
 .. testsetup::
 
+    import asyncio
+    import inspect
     import unittest
     from unittest.mock import sentinel, DEFAULT, ANY
     from unittest.mock import patch, call, Mock, MagicMock, PropertyMock, AsyncMock
