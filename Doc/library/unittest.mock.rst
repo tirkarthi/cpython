@@ -203,7 +203,7 @@ The Mock Class
 
     import unittest
     from unittest.mock import sentinel, DEFAULT, ANY
-    from unittest.mock import patch, call, Mock, MagicMock, PropertyMock
+    from unittest.mock import patch, call, Mock, MagicMock, PropertyMock, AsyncMock
     from unittest.mock import mock_open
 
 :class:`Mock` is a flexible mock object intended to replace the use of stubs and
@@ -976,11 +976,11 @@ object::
       Assert the mock has been awaited with the specified calls.
       The :attr:`await_args_list` list is checked for the awaits.
 
-      If `any_order` is False (the default) then the awaits must be
+      If *any_order* is False (the default) then the awaits must be
       sequential. There can be extra calls before or after the
       specified awaits.
 
-      If `any_order` is True then the awaits can be in any order, but
+      If *any_order* is True then the awaits can be in any order, but
       they must all appear in :attr:`await_args_list`.
 
         >>> mock = AsyncMock()
