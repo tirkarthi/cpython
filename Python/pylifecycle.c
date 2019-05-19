@@ -701,36 +701,30 @@ _Py_PreInitializeFromPyArgv(const _PyPreConfig *src_config, const _PyArgv *args)
         return _Py_INIT_OK();
     }
 
-    _PyPreConfig config = _PyPreConfig_INIT;
+    _PyPreConfig config;
+    _PyPreConfig_Init(&config);
 
     if (src_config) {
-        if (_PyPreConfig_Copy(&config, src_config) < 0) {
-            err = _Py_INIT_NO_MEMORY();
-            goto done;
-        }
+        _PyPreConfig_Copy(&config, src_config);
     }
 
     err = _PyPreConfig_Read(&config, args);
     if (_Py_INIT_FAILED(err)) {
-        goto done;
+        return err;
     }
 
     err = _PyPreConfig_Write(&config);
     if (_Py_INIT_FAILED(err)) {
-        goto done;
+        return err;
     }
 
     runtime->pre_initialized = 1;
-    err = _Py_INIT_OK();
-
-done:
-    _PyPreConfig_Clear(&config);
-    return err;
+    return _Py_INIT_OK();
 }
 
 
 _PyInitError
-_Py_PreInitializeFromArgs(const _PyPreConfig *src_config, int argc, char **argv)
+_Py_PreInitializeFromArgs(const _PyPreConfig *src_config, Py_ssize_t argc, char **argv)
 {
     _PyArgv args = {.use_bytes_argv = 1, .argc = argc, .bytes_argv = argv};
     return _Py_PreInitializeFromPyArgv(src_config, &args);
@@ -738,7 +732,7 @@ _Py_PreInitializeFromArgs(const _PyPreConfig *src_config, int argc, char **argv)
 
 
 _PyInitError
-_Py_PreInitializeFromWideArgs(const _PyPreConfig *src_config, int argc, wchar_t **argv)
+_Py_PreInitializeFromWideArgs(const _PyPreConfig *src_config, Py_ssize_t argc, wchar_t **argv)
 {
     _PyArgv args = {.use_bytes_argv = 0, .argc = argc, .wchar_argv = argv};
     return _Py_PreInitializeFromPyArgv(src_config, &args);
@@ -756,13 +750,22 @@ _PyInitError
 _Py_PreInitializeFromCoreConfig(const _PyCoreConfig *coreconfig,
                                 const _PyArgv *args)
 {
-    _PyPreConfig config = _PyPreConfig_INIT;
+    _PyPreConfig config;
+    _PyPreConfig_Init(&config);
     if (coreconfig != NULL) {
-        _PyCoreConfig_GetCoreConfig(&config, coreconfig);
+        _PyPreConfig_GetCoreConfig(&config, coreconfig);
     }
-    return _Py_PreInitializeFromPyArgv(&config, args);
-    /* No need to clear config:
-       _PyCoreConfig_GetCoreConfig() doesn't allocate memory */
+
+    if (args == NULL && coreconfig != NULL && coreconfig->parse_argv) {
+        _PyArgv config_args = {
+            .use_bytes_argv = 0,
+            .argc = coreconfig->argv.length,
+            .wchar_argv = coreconfig->argv.items};
+        return _Py_PreInitializeFromPyArgv(&config, &config_args);
+    }
+    else {
+        return _Py_PreInitializeFromPyArgv(&config, args);
+    }
 }
 
 
@@ -833,7 +836,8 @@ _Py_InitializeCore(_PyRuntimeState *runtime,
         return err;
     }
 
-    _PyCoreConfig local_config = _PyCoreConfig_INIT;
+    _PyCoreConfig local_config;
+    _PyCoreConfig_Init(&local_config);
     err = pyinit_coreconfig(runtime, &local_config, src_config, args, interp_p);
     _PyCoreConfig_Clear(&local_config);
     return err;
@@ -1017,7 +1021,7 @@ init_python(const _PyCoreConfig *config, const _PyArgv *args)
 
 
 _PyInitError
-_Py_InitializeFromArgs(const _PyCoreConfig *config, int argc, char **argv)
+_Py_InitializeFromArgs(const _PyCoreConfig *config, Py_ssize_t argc, char **argv)
 {
     _PyArgv args = {.use_bytes_argv = 1, .argc = argc, .bytes_argv = argv};
     return init_python(config, &args);
@@ -1025,7 +1029,7 @@ _Py_InitializeFromArgs(const _PyCoreConfig *config, int argc, char **argv)
 
 
 _PyInitError
-_Py_InitializeFromWideArgs(const _PyCoreConfig *config, int argc, wchar_t **argv)
+_Py_InitializeFromWideArgs(const _PyCoreConfig *config, Py_ssize_t argc, wchar_t **argv)
 {
     _PyArgv args = {.use_bytes_argv = 0, .argc = argc, .wchar_argv = argv};
     return init_python(config, &args);
@@ -1055,7 +1059,8 @@ Py_InitializeEx(int install_sigs)
         return;
     }
 
-    _PyCoreConfig config = _PyCoreConfig_INIT;
+    _PyCoreConfig config;
+    _PyCoreConfig_Init(&config);
     config.install_signal_handlers = install_sigs;
 
     err = _Py_InitializeFromConfig(&config);
