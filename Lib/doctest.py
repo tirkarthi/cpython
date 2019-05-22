@@ -55,7 +55,7 @@ __all__ = [
     'NORMALIZE_WHITESPACE',
     'ELLIPSIS',
     'SKIP',
-    'ALLOW_AWAIT'
+    'ALLOW_TOP_LEVEL_AWAIT'
     'IGNORE_EXCEPTION_DETAIL',
     'COMPARISON_FLAGS',
     'REPORT_UDIFF',
@@ -141,7 +141,7 @@ DONT_ACCEPT_BLANKLINE = register_optionflag('DONT_ACCEPT_BLANKLINE')
 NORMALIZE_WHITESPACE = register_optionflag('NORMALIZE_WHITESPACE')
 ELLIPSIS = register_optionflag('ELLIPSIS')
 SKIP = register_optionflag('SKIP')
-ALLOW_AWAIT= register_optionflag('ALLOW_AWAIT')
+ALLOW_TOP_LEVEL_AWAIT= register_optionflag('ALLOW_TOP_LEVEL_AWAIT')
 IGNORE_EXCEPTION_DETAIL = register_optionflag('IGNORE_EXCEPTION_DETAIL')
 
 COMPARISON_FLAGS = (DONT_ACCEPT_TRUE_FOR_1 |
@@ -150,7 +150,7 @@ COMPARISON_FLAGS = (DONT_ACCEPT_TRUE_FOR_1 |
                     ELLIPSIS |
                     SKIP |
                     IGNORE_EXCEPTION_DETAIL |
-                    ALLOW_AWAIT)
+                    ALLOW_TOP_LEVEL_AWAIT)
 
 REPORT_UDIFF = register_optionflag('REPORT_UDIFF')
 REPORT_CDIFF = register_optionflag('REPORT_CDIFF')
@@ -1315,12 +1315,6 @@ class DocTestRunner:
             if self.optionflags & SKIP:
                 continue
 
-            if self.optionflags & ALLOW_AWAIT:
-                if compileflags is not None:
-                    compileflags |= ast.PyCF_ALLOW_TOP_LEVEL_AWAIT
-                else:
-                    compileflags = ast.PyCF_ALLOW_TOP_LEVEL_AWAIT
-
             # Record that we started this example.
             tries += 1
             if not quiet:
@@ -1336,8 +1330,15 @@ class DocTestRunner:
             # keyboard interrupts.)
             try:
                 # Don't blink!  This is where the user's code gets run.
-                code = compile(example.source, filename, "single",
-                               compileflags, 1)
+                # If it allows ALLOW_TOP_LEVEL_AWAIT then pass it to compileflag
+                if self.optionflags & ALLOW_TOP_LEVEL_AWAIT:
+                    code = compile(example.source, filename, "single",
+                                   compileflags | ast.PyCF_ALLOW_TOP_LEVEL_AWAIT, 1)
+                else:
+                    code = compile(example.source, filename, "single",
+                                   compileflags, 1)
+
+                # If it's await related code then run it with asyncio.run and await eval
                 if code.co_flags & inspect.CO_COROUTINE:
                     async def execute_code(code, globs):
                         await eval(code, globs)
