@@ -1293,6 +1293,7 @@ class DocTestRunner:
         SUCCESS, FAILURE, BOOM = range(3) # `outcome` state
 
         check = self._checker.check_output
+        loop = None
 
         # Process each example.
         for examplenum, example in enumerate(test.examples):
@@ -1332,6 +1333,8 @@ class DocTestRunner:
                 # Don't blink!  This is where the user's code gets run.
                 # If it allows ALLOW_TOP_LEVEL_AWAIT then pass it to compileflag
                 if self.optionflags & ALLOW_TOP_LEVEL_AWAIT:
+                    if loop is None:
+                        loop = asyncio.get_event_loop()
                     code = compile(example.source, filename, "single",
                                    compileflags | ast.PyCF_ALLOW_TOP_LEVEL_AWAIT, 1)
                 else:
@@ -1340,9 +1343,7 @@ class DocTestRunner:
 
                 # If it's await related code then run it with asyncio.run and await eval
                 if code.co_flags & inspect.CO_COROUTINE:
-                    async def execute_code(code, globs):
-                        await eval(code, globs)
-                    asyncio.run(execute_code(code, test.globs))
+                    loop.run_until_complete(eval(code, test.globs))
                 else:
                     exec(code, test.globs)
                 self.debugger.set_continue() # ==== Example Finished ====
