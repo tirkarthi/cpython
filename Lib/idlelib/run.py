@@ -15,6 +15,8 @@ import traceback
 import _thread as thread
 import threading
 import warnings
+import inspect
+import asyncio
 
 from idlelib import autocomplete  # AutoComplete, fetch_encodings
 from idlelib import calltip  # Calltip
@@ -547,7 +549,12 @@ class Executive(object):
             self.usr_exc_info = None
             interruptable = True
             try:
-                exec(code, self.locals)
+                if not isinstance(code, str) and code.co_flags & inspect.CO_COROUTINE:
+                    async def run_async_code():
+                        await eval(code, self.locals)
+                    asyncio.run(run_async_code())
+                else:
+                    exec(code, self.locals)
             finally:
                 interruptable = False
         except SystemExit as e:

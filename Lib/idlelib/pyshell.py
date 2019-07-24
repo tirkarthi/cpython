@@ -1,6 +1,7 @@
 #! /usr/bin/env python3
 
 import sys
+import ast
 if __name__ == "__main__":
     sys.modules['idlelib.pyshell'] = sys.modules['__main__']
 
@@ -398,6 +399,7 @@ class ModifiedInterpreter(InteractiveInterpreter):
         self.restarting = False
         self.subprocess_arglist = None
         self.port = PORT
+        self.compile.compiler.flags |= ast.PyCF_ALLOW_TOP_LEVEL_AWAIT
         self.original_compiler_flags = self.compile.compiler.flags
 
     _afterid = None
