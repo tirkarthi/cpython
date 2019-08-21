@@ -2361,6 +2361,7 @@ def _url_handler(url, content_type="text/html"):
             return '''\
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
 <html><head><title>Pydoc: %s</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha256-YLGeXaapI0/5IgZopewRJcFXomhRMlYYjugPLSyNjTY=" crossorigin="anonymous" />
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
 %s</head><body bgcolor="#f0f0f8">%s<div style="clear:both;padding-top:.5em;">%s</div>
 </body></html>''' % (title, css_link, html_navbar(), contents)
@@ -2458,7 +2459,12 @@ def _url_handler(url, content_type="text/html"):
         path = urllib.parse.unquote(path)
         with tokenize.open(path) as fp:
             lines = html.escape(fp.read())
-        body = '<pre>%s</pre>' % lines
+        body = '''
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.15.10/styles/solarized-dark.min.css" integrity="sha256-xUUCW7JMutlIaRYLbH+zoZ6m1uR+41g6mnmR1yaJQkk=" crossorigin="anonymous" />
+<script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.8.0/highlight.min.js"></script>
+<script charset="UTF-8" src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.15.10/languages/python.min.js">
+</script><pre><code class="python">%s</code></pre>
+<script>hljs.initHighlighting();</script>''' % lines
         heading = html.heading(
             '<big><big><strong>File Listing</strong></big></big>',
             '#ffffff', '#7799ee')
