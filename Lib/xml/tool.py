@@ -22,6 +22,8 @@ def main():
     description = ('A simple command line interface for xml module '
                    'to validate and pretty-print XML objects.')
     parser = argparse.ArgumentParser(prog=prog, description=description)
+    parser.add_argument('--xpath', nargs='?', action='store',
+                        help='XPath to be used on root node.')
     parser.add_argument('infile', nargs='?', type=argparse.FileType(),
                         help='an XML file to be validated or pretty-printed',
                         default=sys.stdin)
@@ -32,13 +34,21 @@ def main():
 
     infile = options.infile
     outfile = options.outfile
+    xpath = options.xpath
+
     with infile, outfile:
         try:
             elem = ET.XML(infile.read())
-            ET.indent(elem)
-            outfile.write(ET.tostring(elem).decode())
-            outfile.write('\n')
-        except ET.ParseError as e:
+            if xpath:
+                for item in elem.findall(xpath):
+                    ET.indent(item)
+                    outfile.write(ET.tostring(item).decode())
+                    outfile.write('\n')
+            else:
+                ET.indent(elem)
+                outfile.write(ET.tostring(elem).decode())
+                outfile.write('\n')
+        except (ET.ParseError, SyntaxError) as e:
             raise SystemExit(e)
 
 
