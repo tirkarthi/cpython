@@ -1,4 +1,4 @@
-r"""Command-line tool to validate and pretty-print XML
+r"""Command-line tool to validate and pretty-print XML with XPath support.
 
 Usage::
 
@@ -11,6 +11,23 @@ Usage::
     $ echo '<html><body><p>hello</p></body>' | python -m xml.tool
     no element found: line 2, column 0
 
+    $ python -m xml.tool person.xml
+    <root>
+      <person name="Kate">
+        <breakfast available="true">Idly</breakfast>
+        <dinner available="true">Poori</dinner>
+      </person>
+      <person name="John">
+        <breakfast available="false">Dosa</breakfast>
+      </person>
+    </root>
+
+    $ python -m xml.tool --xpath './person/breakfast[.="Idly"]' person.xml
+    <breakfast available="true">Idly</breakfast>
+
+    $ python -m xml.tool --xpath './person/breakfast' person.xml
+    <breakfast available="true">Idly</breakfast>
+    <breakfast available="false">Dosa</breakfast>
 """
 import argparse
 import sys
@@ -38,16 +55,15 @@ def main():
 
     with infile, outfile:
         try:
-            elem = ET.XML(infile.read())
+            elem = ET.parse(infile)
             if xpath:
-                for item in elem.findall(xpath):
-                    ET.indent(item)
-                    outfile.write(ET.tostring(item).decode())
+                for item in elem.iterfind(xpath):
+                    outfile.write(ET.tostring(item, encoding='unicode'))
                     outfile.write('\n')
             else:
-                ET.indent(elem)
-                outfile.write(ET.tostring(elem).decode())
-                outfile.write('\n')
+                root = next(elem.iter())
+                ET.indent(root)
+                outfile.write(ET.tostring(root, encoding='unicode'))
         except (ET.ParseError, SyntaxError) as e:
             raise SystemExit(e)
 
