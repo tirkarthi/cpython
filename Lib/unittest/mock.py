@@ -190,6 +190,8 @@ def _set_signature(mock, original, instance=False):
     exec (src, context)
     funcopy = context[name]
     _setup_func(funcopy, mock, sig)
+    _copy_func_details(func, funcopy)
+    funcopy.__name__ = name
     return funcopy
 
 
