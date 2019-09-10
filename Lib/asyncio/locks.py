@@ -157,16 +157,17 @@ class Lock(_ContextManagerMixin):
 
     """
 
-    def __init__(self, *, loop=None):
+    def __init__(self, *, loop=None, _asyncio_internal=False):
         self._waiters = None
         self._locked = False
         if loop is None:
             self._loop = events.get_event_loop()
         else:
             self._loop = loop
-            warnings.warn("The loop argument is deprecated since Python 3.8, "
-                          "and scheduled for removal in Python 3.10.",
-                          DeprecationWarning, stacklevel=2)
+            if not _asyncio_internal:
+                warnings.warn("The loop argument is deprecated since Python 3.8, "
+                              "and scheduled for removal in Python 3.10.",
+                              DeprecationWarning, stacklevel=2)
 
     def __repr__(self):
         res = super().__repr__()
@@ -253,16 +254,17 @@ class Event:
     false.
     """
 
-    def __init__(self, *, loop=None):
+    def __init__(self, *, loop=None, _asyncio_internal=False):
         self._waiters = collections.deque()
         self._value = False
         if loop is None:
             self._loop = events.get_event_loop()
         else:
             self._loop = loop
-            warnings.warn("The loop argument is deprecated since Python 3.8, "
-                          "and scheduled for removal in Python 3.10.",
-                          DeprecationWarning, stacklevel=2)
+            if not _asyncio_internal:
+                warnings.warn("The loop argument is deprecated since Python 3.8, "
+                              "and scheduled for removal in Python 3.10.",
+                              DeprecationWarning, stacklevel=2)
 
     def __repr__(self):
         res = super().__repr__()
@@ -322,17 +324,18 @@ class Condition(_ContextManagerMixin):
     A new Lock object is created and used as the underlying lock.
     """
 
-    def __init__(self, lock=None, *, loop=None):
+    def __init__(self, lock=None, *, loop=None, _asyncio_internal=False):
         if loop is None:
             self._loop = events.get_event_loop()
         else:
             self._loop = loop
-            warnings.warn("The loop argument is deprecated since Python 3.8, "
-                          "and scheduled for removal in Python 3.10.",
-                          DeprecationWarning, stacklevel=2)
+            if not _asyncio_internal:
+                warnings.warn("The loop argument is deprecated since Python 3.8, "
+                              "and scheduled for removal in Python 3.10.",
+                              DeprecationWarning, stacklevel=2)
 
         if lock is None:
-            lock = Lock(loop=self._loop)
+            lock = Lock(loop=self._loop, _asyncio_internal=_asyncio_internal)
         elif lock._loop is not self._loop:
             raise ValueError("loop argument must agree with lock")
 

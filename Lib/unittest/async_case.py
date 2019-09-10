@@ -113,7 +113,7 @@ class IsolatedAsyncioTestCase(TestCase):
         asyncio.set_event_loop(loop)
         loop.set_debug(True)
         self._asyncioTestLoop = loop
-        self._asyncioCallsQueue = asyncio.Queue(loop=loop)
+        self._asyncioCallsQueue = asyncio.Queue(loop=loop, _asyncio_internal=True)
         self._asyncioCallsTask = loop.create_task(self._asyncioLoopRunner())
 
     def _tearDownAsyncioLoop(self):

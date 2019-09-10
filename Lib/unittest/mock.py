@@ -2884,6 +2884,6 @@ class _AwaitEvent:
         #   - there are no awaits here, method will be executed without
         #   switching asyncio context.
         if self._condition is None:
-            self._condition = asyncio.Condition()
+            self._condition = asyncio.Condition(_asyncio_internal=True)
 
         return self._condition
