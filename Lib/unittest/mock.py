@@ -2827,19 +2827,22 @@ class EventMock(MagicMock):
     Defaults to `Threading.Event` and can take values like multiprocessing.Event.
     """
 
-    def __init__(self, *args, event_class=threading.Event, **kwargs):
+    def __init__(self, *args, event_class=threading.Event,
+                 lock_class=threading.Lock, **kwargs):
         _safe_super(EventMock, self).__init__(*args, **kwargs)
         self._event = event_class()
         self._event_class = event_class
         self._expected_calls = []
+        self._events_lock = lock_class()
 
     def __get_event(self, expected_args, expected_kwargs):
-        for args, kwargs, event in self._expected_calls:
-            if (args, kwargs) == (expected_args, expected_kwargs):
-                return event
-        new_event = self._event_class()
-        self._expected_calls.append((expected_args, expected_kwargs, new_event))
-        return new_event
+        with self._events_lock:
+            for args, kwargs, event in self._expected_calls:
+                if (args, kwargs) == (expected_args, expected_kwargs):
+                    return event
+            new_event = self._event_class()
+            self._expected_calls.append((expected_args, expected_kwargs, new_event))
+            return new_event
 
 
     def _mock_call(self, *args, **kwargs):
