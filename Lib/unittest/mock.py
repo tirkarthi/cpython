@@ -2835,9 +2835,8 @@ class EventMock(MagicMock):
     def _mock_call(self, *args, **kwargs):
         ret_value = _safe_super(EventMock, self)._mock_call(*args, **kwargs)
 
-        for call in self._mock_mock_calls:
-            event = self._expected_calls[call.args]
-            event.set()
+        call_event = self._expected_calls[args]
+        call_event.set()
 
         self._event.set()
 
