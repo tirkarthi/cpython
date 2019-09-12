@@ -2857,7 +2857,10 @@ class EventMock(MagicMock):
 
         `mock_timeout` - time to wait for in seconds, waits forever otherwise.
         """
-        return self._event.wait(timeout=mock_timeout)
+        if not self._event.wait(timeout=mock_timeout):
+            msg = (f"{self._mock_name or 'mock'} was not called before"
+                   f" timeout({mock_timeout}).")
+            raise AssertionError(msg)
 
     def wait_until_any_call(self, *args, mock_timeout=None, **kwargs):
         """Wait until the mock object is called with given args.
@@ -2865,7 +2868,9 @@ class EventMock(MagicMock):
         `mock_timeout` - time to wait for in seconds, waits forever otherwise.
         """
         event = self.__get_event(args, kwargs)
-        return event.wait(timeout=mock_timeout)
+        if not event.wait(timeout=mock_timeout):
+            expected_string = self._format_mock_call_signature(args, kwargs)
+            raise AssertionError(f'{expected_string} call not found')
 
 
 def seal(mock):

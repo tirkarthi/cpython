@@ -110,7 +110,8 @@ class TestEventMock(unittest.TestCase):
         with patch(f'{__name__}.Something', waitable_mock):
             something = Something()
             self.run_async(something.method_1, delay=0.2)
-            something.method_1.wait_until_called(mock_timeout=0.1)
+            with self.assertRaises(AssertionError):
+                something.method_1.wait_until_called(mock_timeout=0.1)
             something.method_1.assert_not_called()
 
             something.method_1.wait_until_called()
@@ -164,7 +165,8 @@ class TestEventMock(unittest.TestCase):
             something.method_1(1)
 
             something.method_1.assert_called_once_with(1)
-            something.method_1.wait_until_any_call(mock_timeout=0.1)
+            with self.assertRaises(AssertionError):
+                something.method_1.wait_until_any_call(mock_timeout=0.1)
 
             something.method_1()
             something.method_1.wait_until_any_call()
