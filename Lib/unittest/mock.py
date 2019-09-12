@@ -14,6 +14,7 @@ __all__ = (
     'call',
     'create_autospec',
     'AsyncMock',
+    'EventMock',
     'FILTER_DIR',
     'NonCallableMock',
     'NonCallableMagicMock',
@@ -32,9 +33,11 @@ import inspect
 import pprint
 import sys
 import builtins
+import threading
 from types import CodeType, ModuleType, MethodType
 from unittest.util import safe_repr
 from functools import wraps, partial
+from collections import defaultdict
 
 
 _builtins = {name for name in dir(builtins) if not name.startswith('_')}
@@ -2814,6 +2817,46 @@ class PropertyMock(Mock):
         return self()
     def __set__(self, obj, val):
         self(val)
+
+
+class EventMock(MagicMock):
+    """
+    A mock that can be used to wait until it was called.
+
+    `event_class` - Class to be used to create event object.
+    Defaults to `Threading.Event` and can take values like multiprocessing.Event.
+    """
+
+    def __init__(self, *args, event_class=threading.Event, **kwargs):
+        _safe_super(EventMock, self).__init__(*args, **kwargs)
+        self._event = event_class()
+        self._expected_calls = defaultdict(event_class)
+
+    def _mock_call(self, *args, **kwargs):
+        ret_value = _safe_super(EventMock, self)._mock_call(*args, **kwargs)
+
+        for call in self._mock_mock_calls:
+            event = self._expected_calls[call.args]
+            event.set()
+
+        self._event.set()
+
+        return ret_value
+
+    def wait_until_called(self, mock_timeout=None):
+        """Wait until the mock object is called.
+
+        `mock_timeout` - time to wait for in seconds, waits forever otherwise.
+        """
+        return self._event.wait(timeout=mock_timeout)
+
+    def wait_until_any_call(self, *args, mock_timeout=None):
+        """Wait until the mock object is called with given args.
+
+        `mock_timeout` - time to wait for in seconds, waits forever otherwise.
+        """
+        event = self._expected_calls[args]
+        return event.wait(timeout=mock_timeout)
 
 
 def seal(mock):
