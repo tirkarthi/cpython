@@ -2830,12 +2830,22 @@ class EventMock(MagicMock):
     def __init__(self, *args, event_class=threading.Event, **kwargs):
         _safe_super(EventMock, self).__init__(*args, **kwargs)
         self._event = event_class()
-        self._expected_calls = defaultdict(event_class)
+        self._event_class = event_class
+        self._expected_calls = []
+
+    def __get_event(self, expected_args, expected_kwargs):
+        for args, kwargs, event in self._expected_calls:
+            if (args, kwargs) == (expected_args, expected_kwargs):
+                return event
+        new_event = self._event_class()
+        self._expected_calls.append((expected_args, expected_kwargs, new_event))
+        return new_event
+
 
     def _mock_call(self, *args, **kwargs):
         ret_value = _safe_super(EventMock, self)._mock_call(*args, **kwargs)
 
-        call_event = self._expected_calls[args]
+        call_event = self.__get_event(args, kwargs)
         call_event.set()
 
         self._event.set()
@@ -2849,12 +2859,12 @@ class EventMock(MagicMock):
         """
         return self._event.wait(timeout=mock_timeout)
 
-    def wait_until_any_call(self, *args, mock_timeout=None):
+    def wait_until_any_call(self, *args, mock_timeout=None, **kwargs):
         """Wait until the mock object is called with given args.
 
         `mock_timeout` - time to wait for in seconds, waits forever otherwise.
         """
-        event = self._expected_calls[args]
+        event = self.__get_event(args, kwargs)
         return event.wait(timeout=mock_timeout)
 
 
