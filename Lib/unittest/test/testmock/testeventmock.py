@@ -24,11 +24,6 @@ class TestEventMock(unittest.TestCase):
         func(*args, **kwargs)
 
 
-    def _create_thread(self, func, *args, **kwargs):
-        thread = threading.Thread(target=self._call_after_delay,
-                                  args=(func,) + args, kwargs=kwargs)
-        return thread
-
     def setUp(self):
         self._executor = concurrent.futures.ThreadPoolExecutor(max_workers=5)
 
