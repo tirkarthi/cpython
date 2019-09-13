@@ -33,8 +33,11 @@ class TestEventMock(unittest.TestCase):
     def run_async(self, func, /, *args, delay=0, **kwargs):
         self._executor.submit(self._call_after_delay, func, *args, **kwargs, delay=delay)
 
+    def _make_mock(self, *args, **kwargs):
+        return EventMock(*args, **kwargs)
+
     def test_instance_check(self):
-        waitable_mock = EventMock(event_class=threading.Event)
+        waitable_mock = self._make_mock()
 
         with patch(f'{__name__}.Something', waitable_mock):
             something = Something()
@@ -45,7 +48,7 @@ class TestEventMock(unittest.TestCase):
 
 
     def test_side_effect(self):
-        waitable_mock = EventMock(event_class=threading.Event)
+        waitable_mock = self._make_mock()
 
         with patch(f'{__name__}.Something', waitable_mock):
             something = Something()
@@ -55,8 +58,7 @@ class TestEventMock(unittest.TestCase):
 
 
     def test_spec(self):
-        waitable_mock = EventMock(
-            event_class=threading.Event, spec=Something)
+        waitable_mock = self._make_mock(spec=Something)
 
         with patch(f'{__name__}.Something', waitable_mock) as m:
             something = m()
@@ -70,7 +72,7 @@ class TestEventMock(unittest.TestCase):
 
 
     def test_wait_until_called(self):
-        waitable_mock = EventMock(event_class=threading.Event)
+        waitable_mock = self._make_mock(spec=Something)
 
         with patch(f'{__name__}.Something', waitable_mock):
             something = Something()
@@ -80,7 +82,7 @@ class TestEventMock(unittest.TestCase):
 
 
     def test_wait_until_called_called_before(self):
-        waitable_mock = EventMock(event_class=threading.Event)
+        waitable_mock = self._make_mock(spec=Something)
 
         with patch(f'{__name__}.Something', waitable_mock):
             something = Something()
@@ -90,7 +92,7 @@ class TestEventMock(unittest.TestCase):
 
 
     def test_wait_until_called_magic_method(self):
-        waitable_mock = EventMock(event_class=threading.Event)
+        waitable_mock = self._make_mock(spec=Something)
 
         with patch(f'{__name__}.Something', waitable_mock):
             something = Something()
@@ -100,7 +102,7 @@ class TestEventMock(unittest.TestCase):
 
 
     def test_wait_until_called_timeout(self):
-        waitable_mock = EventMock(event_class=threading.Event)
+        waitable_mock = self._make_mock(spec=Something)
 
         with patch(f'{__name__}.Something', waitable_mock):
             something = Something()
@@ -114,7 +116,7 @@ class TestEventMock(unittest.TestCase):
 
 
     def test_wait_until_any_call_positional(self):
-        waitable_mock = EventMock(event_class=threading.Event)
+        waitable_mock = self._make_mock(spec=Something)
 
         with patch(f'{__name__}.Something', waitable_mock):
             something = Something()
@@ -134,7 +136,7 @@ class TestEventMock(unittest.TestCase):
 
 
     def test_wait_until_any_call_keywords(self):
-        waitable_mock = EventMock(event_class=threading.Event)
+        waitable_mock = self._make_mock(spec=Something)
 
         with patch(f'{__name__}.Something', waitable_mock):
             something = Something()
@@ -153,7 +155,7 @@ class TestEventMock(unittest.TestCase):
             something.method_1.wait_until_any_call(b=2)
 
     def test_wait_until_any_call_no_argument(self):
-        waitable_mock = EventMock(event_class=threading.Event)
+        waitable_mock = self._make_mock(spec=Something)
 
         with patch(f'{__name__}.Something', waitable_mock):
             something = Something()
