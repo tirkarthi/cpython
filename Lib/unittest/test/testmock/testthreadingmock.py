@@ -5,7 +5,7 @@ import unittest
 import concurrent.futures
 
 from test.support import start_threads
-from unittest.mock import patch, EventMock, call
+from unittest.mock import patch, ThreadingMock, call
 
 
 class Something:
@@ -17,7 +17,7 @@ class Something:
         pass
 
 
-class TestEventMock(unittest.TestCase):
+class TestThreadingMock(unittest.TestCase):
 
     def _call_after_delay(self, func, /, *args, **kwargs):
         time.sleep(kwargs.pop('delay'))
@@ -34,7 +34,7 @@ class TestEventMock(unittest.TestCase):
         self._executor.submit(self._call_after_delay, func, *args, **kwargs, delay=delay)
 
     def _make_mock(self, *args, **kwargs):
-        return EventMock(*args, **kwargs)
+        return ThreadingMock(*args, **kwargs)
 
     def test_instance_check(self):
         waitable_mock = self._make_mock()
@@ -42,9 +42,9 @@ class TestEventMock(unittest.TestCase):
         with patch(f'{__name__}.Something', waitable_mock):
             something = Something()
 
-            self.assertIsInstance(something.method_1, EventMock)
+            self.assertIsInstance(something.method_1, ThreadingMock)
             self.assertIsInstance(
-                something.method_1().method_2(), EventMock)
+                something.method_1().method_2(), ThreadingMock)
 
 
     def test_side_effect(self):
@@ -63,9 +63,9 @@ class TestEventMock(unittest.TestCase):
         with patch(f'{__name__}.Something', waitable_mock) as m:
             something = m()
 
-            self.assertIsInstance(something.method_1, EventMock)
+            self.assertIsInstance(something.method_1, ThreadingMock)
             self.assertIsInstance(
-                something.method_1().method_2(), EventMock)
+                something.method_1().method_2(), ThreadingMock)
 
             with self.assertRaises(AttributeError):
                 m.test

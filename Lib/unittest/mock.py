@@ -14,7 +14,7 @@ __all__ = (
     'call',
     'create_autospec',
     'AsyncMock',
-    'EventMock',
+    'ThreadingMock',
     'FILTER_DIR',
     'NonCallableMock',
     'NonCallableMagicMock',
@@ -2819,13 +2819,14 @@ class PropertyMock(Mock):
         self(val)
 
 
-class EventMock(MagicMock):
+class ThreadingMock(MagicMock):
     """
-    A mock that can be used to wait until it was called.
+    A mock that can be used to wait until on calls happening
+    in a different thread.
     """
 
     def __init__(self, *args, **kwargs):
-        _safe_super(EventMock, self).__init__(*args, **kwargs)
+        _safe_super(ThreadingMock, self).__init__(*args, **kwargs)
         self._event = threading.Event()
         self._expected_calls = []
         self._events_lock = threading.Lock()
@@ -2841,7 +2842,7 @@ class EventMock(MagicMock):
 
 
     def _mock_call(self, *args, **kwargs):
-        ret_value = _safe_super(EventMock, self)._mock_call(*args, **kwargs)
+        ret_value = _safe_super(ThreadingMock, self)._mock_call(*args, **kwargs)
 
         call_event = self.__get_event(args, kwargs)
         call_event.set()
