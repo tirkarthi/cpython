@@ -2822,25 +2822,20 @@ class PropertyMock(Mock):
 class EventMock(MagicMock):
     """
     A mock that can be used to wait until it was called.
-
-    `event_class` - Class to be used to create event object.
-    Defaults to `Threading.Event` and can take values like multiprocessing.Event.
     """
 
-    def __init__(self, *args, event_class=threading.Event,
-                 lock_class=threading.Lock, **kwargs):
+    def __init__(self, *args, **kwargs):
         _safe_super(EventMock, self).__init__(*args, **kwargs)
-        self._event = event_class()
-        self._event_class = event_class
+        self._event = threading.Event()
         self._expected_calls = []
-        self._events_lock = lock_class()
+        self._events_lock = threading.Lock()
 
     def __get_event(self, expected_args, expected_kwargs):
         with self._events_lock:
             for args, kwargs, event in self._expected_calls:
                 if (args, kwargs) == (expected_args, expected_kwargs):
                     return event
-            new_event = self._event_class()
+            new_event = threading.Event()
             self._expected_calls.append((expected_args, expected_kwargs, new_event))
             return new_event
 
