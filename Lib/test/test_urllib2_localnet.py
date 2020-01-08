@@ -500,7 +500,7 @@ class TestUrlopen(unittest.TestCase):
         handler.port = server.port
         return handler
 
-    def test_redirection(self):
+    def test_redirection_header_location(self):
         expected_response = b"We got here..."
         responses = [
             (302, [("Location", "http://localhost:%(port)s/somewhere_else")],
@@ -512,6 +512,30 @@ class TestUrlopen(unittest.TestCase):
         data = self.urlopen("http://localhost:%s/" % handler.port)
         self.assertEqual(data, expected_response)
         self.assertEqual(handler.requests, ["/", "/somewhere_else"])
+
+    def test_redirection_header_uri(self):
+        expected_response = b"We got here..."
+        responses = [
+            (302, [("uri", "http://localhost:%(port)s/somewhere_else")],
+             ""),
+            (200, [], expected_response)
+        ]
+
+        handler = self.start_server(responses)
+        data = self.urlopen("http://localhost:%s/" % handler.port)
+        self.assertEqual(data, expected_response)
+        self.assertEqual(handler.requests, ["/", "/somewhere_else"])
+
+    def test_redirection_no_header(self):
+        expected_response = b"We got here..."
+        responses = [
+            (302, [], ""),
+            (200, [], expected_response)
+        ]
+
+        handler = self.start_server(responses)
+        with self.assertRaisesRegex(urllib.error.HTTPError, "Error 302: Found"):
+            self.urlopen("http://localhost:%s/" % handler.port)
 
     def test_chunked(self):
         expected_response = b"hello world"

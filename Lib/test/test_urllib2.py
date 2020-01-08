@@ -1424,6 +1424,30 @@ class HandlerTests(unittest.TestCase):
         self.assertEqual(req.host, "proxy.example.com:3128")
         self.assertEqual(req.get_header("Proxy-authorization"), "FooBar")
 
+    def test_proxy_authorization_username_password(self):
+        credentials = "joe:password%20123"
+        auth_header = "Basic am9lOnBhc3N3b3JkIDEyMw=="
+        proxy_url = f'http://{credentials}@proxy.example.com:3128'
+        proxy_handler = urllib.request.ProxyHandler(dict(https=proxy_url))
+        https_handler = MockHTTPSHandler()
+
+        opener = OpenerDirector()
+        opener.add_handler(https_handler)
+        opener.add_handler(proxy_handler)
+        req = Request("https://www.example.com/")
+        req.add_header("User-Agent", "Grail")
+        self.assertEqual(req.host, "www.example.com")
+        self.assertIsNone(req._tunnel_host)
+        response = opener.open(req)
+
+        self.assertNotIn(("Proxy-Authorization", auth_header),
+                         https_handler.httpconn.req_headers)
+        self.assertIn(("User-Agent", "Grail"),
+                      https_handler.httpconn.req_headers)
+        self.assertIsNotNone(req._tunnel_host)
+        self.assertEqual(req.host, "proxy.example.com:3128")
+        self.assertEqual(req.get_header("Proxy-authorization"), auth_header)
+
     @unittest.skipUnless(sys.platform == 'darwin', "only relevant for OSX")
     def test_osx_proxy_bypass(self):
         bypass = {
