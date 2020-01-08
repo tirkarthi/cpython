@@ -555,6 +555,30 @@ class SimpleHTTPServerTestCase(BaseTestCase):
         html_text = '>%s<' % html.escape(filename, quote=False)
         self.assertIn(html_text.encode(enc), body)
 
+    def test_guess_type_case_insensitive(self):
+        data = b'{"foo": "bar"}'
+        with open(os.path.join(self.tempdir_name, 'sample.json'), 'wb') as f:
+            f.write(data)
+        response = self.request(self.base_url + '/sample.json')
+        self.check_status_and_reason(response, HTTPStatus.OK, data)
+        self.assertEqual(response.headers['Content-Type'], 'application/json')
+
+        response = self.request(self.base_url + '/sample.JSON')
+        self.check_status_and_reason(response, HTTPStatus.OK, data)
+        self.assertEqual(response.headers['Content-Type'], 'application/json')
+
+    def test_directory_symlink_display(self):
+        sample_dir = os.path.join(self.tempdir_name, 'sample_dir')
+        os.mkdir(sample_dir)
+        response = self.request(self.base_url + '/')
+        body = self.check_status_and_reason(response, HTTPStatus.OK)
+        self.assertIn(b'<a href="sample_dir/">sample_dir/</a>', body)
+
+        target = os.path.join(self.tempdir_name, 'symlink_dir')
+        os.symlink(sample_dir, target, target_is_directory=True)
+        response = self.request(self.base_url + '/')
+        body = self.check_status_and_reason(response, HTTPStatus.OK)
+        self.assertIn(b'<a href="symlink_dir">symlink_dir@</a>', body)
 
 cgi_file1 = """\
 #!%s
@@ -751,6 +775,12 @@ class CGIHTTPServerTestCase(BaseTestCase):
         res = self.request('/cgi-bin/file2.py', 'POST', params, headers)
 
         self.assertEqual(res.read(), b'1, python, 123456' + self.linesep)
+
+    def test_cgi_false_post(self):
+        params = urllib.parse.urlencode({'spam' : 1})
+        headers = {'Content-type' : 'application/x-www-form-urlencoded'}
+        res = self.request('invalid', 'POST', params, headers)
+        self.assertEqual(res.status, HTTPStatus.NOT_IMPLEMENTED)
 
     def test_invaliduri(self):
         res = self.request('/cgi-bin/invalid')
